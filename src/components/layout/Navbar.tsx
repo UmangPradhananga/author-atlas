@@ -1,7 +1,10 @@
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, BookOpen, LogOut, User } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Menu, X, BookOpen, LogOut, User, LayoutDashboard, 
+  FileText, ClipboardCheck, Users, Settings, Plus 
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   DropdownMenu,
@@ -13,11 +16,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -35,13 +40,28 @@ const Navbar = () => {
       .join('')
       .toUpperCase();
   };
+  
+  const isActive = (path: string) => location.pathname === path;
+
+  const NavLink = ({ to, label, icon: Icon }: { to: string, label: string, icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) => (
+    <Link 
+      to={to} 
+      className={cn(
+        "text-sm font-medium transition-colors flex items-center gap-1",
+        isActive(to) ? "text-primary" : "hover:text-primary"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      <span>{label}</span>
+    </Link>
+  );
 
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <BookOpen className="h-6 w-6 text-journal-blue" />
+            <BookOpen className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl hidden md:inline-block">Journal Manager</span>
           </Link>
         </div>
@@ -54,22 +74,64 @@ const Navbar = () => {
         </div>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex items-center space-x-4 mx-6 flex-1">
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+        <nav className="hidden md:flex items-center space-x-6 mx-6 flex-1">
+          <Link to="/" className={cn(
+            "text-sm font-medium transition-colors",
+            isActive('/') ? "text-primary" : "hover:text-primary"
+          )}>
             Home
           </Link>
-          <Link to="/articles" className="text-sm font-medium hover:text-primary transition-colors">
+          
+          <Link to="/articles" className={cn(
+            "text-sm font-medium transition-colors",
+            isActive('/articles') ? "text-primary" : "hover:text-primary"
+          )}>
             Articles
           </Link>
+          
           {user && (
-            <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-              Dashboard
-            </Link>
-          )}
-          {user?.role === 'author' && (
-            <Link to="/submissions" className="text-sm font-medium hover:text-primary transition-colors">
-              My Submissions
-            </Link>
+            <>
+              {user.role !== 'reader' && (
+                <NavLink to="/dashboard" label="Dashboard" icon={LayoutDashboard} />
+              )}
+              
+              {(user.role === 'author' || user.role === 'admin' || user.role === 'editor') && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className={cn(
+                      "text-sm font-medium gap-1 p-2 h-8",
+                      isActive('/submissions') ? "text-primary" : "hover:text-primary"
+                    )}>
+                      <FileText className="h-4 w-4" />
+                      <span>Submissions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => navigate('/submissions')}>
+                      View Submissions
+                    </DropdownMenuItem>
+                    {user.role === 'author' && (
+                      <DropdownMenuItem onClick={() => navigate('/submissions/new')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Submission
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              
+              {(user.role === 'reviewer' || user.role === 'admin' || user.role === 'editor') && (
+                <NavLink to="/reviews" label="Reviews" icon={ClipboardCheck} />
+              )}
+              
+              {user.role === 'admin' && (
+                <NavLink to="/users" label="Users" icon={Users} />
+              )}
+              
+              {(user.role === 'admin' || user.role === 'editor') && (
+                <NavLink to="/settings" label="Settings" icon={Settings} />
+              )}
+            </>
           )}
         </nav>
 
@@ -129,54 +191,108 @@ const Navbar = () => {
               >
                 Articles
               </Link>
+              
               {user && (
-                <Link
-                  to="/dashboard"
-                  className="flex items-center py-2 text-base font-medium hover:text-primary"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-              )}
-              {user?.role === 'author' && (
-                <Link
-                  to="/submissions"
-                  className="flex items-center py-2 text-base font-medium hover:text-primary"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Submissions
-                </Link>
+                <>
+                  {user.role !== 'reader' && (
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      Dashboard
+                    </Link>
+                  )}
+                  
+                  {(user.role === 'author' || user.role === 'admin' || user.role === 'editor') && (
+                    <>
+                      <Link
+                        to="/submissions"
+                        className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <FileText className="h-5 w-5" />
+                        My Submissions
+                      </Link>
+                      {user.role === 'author' && (
+                        <Button 
+                          variant="outline" 
+                          className="flex items-center justify-start gap-1"
+                          onClick={() => {
+                            navigate('/submissions/new');
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                          New Submission
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  
+                  {(user.role === 'reviewer' || user.role === 'admin' || user.role === 'editor') && (
+                    <Link
+                      to="/reviews"
+                      className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <ClipboardCheck className="h-5 w-5" />
+                      Review Queue
+                    </Link>
+                  )}
+                  
+                  {user.role === 'admin' && (
+                    <Link
+                      to="/users"
+                      className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Users className="h-5 w-5" />
+                      Users
+                    </Link>
+                  )}
+                  
+                  {(user.role === 'admin' || user.role === 'editor') && (
+                    <Link
+                      to="/settings"
+                      className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-5 w-5" />
+                      Settings
+                    </Link>
+                  )}
+                </>
               )}
               
               {user ? (
-                <>
-                  <div className="py-2 border-t border-border">
-                    <div className="flex items-center pb-2">
-                      <Avatar className="h-8 w-8 mr-2">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
-                      </div>
+                <div className="py-2 border-t border-border">
+                  <div className="flex items-center pb-2">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                     </div>
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => {
-                      navigate('/profile');
-                      setMobileMenuOpen(false);
-                    }}>
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </Button>
                   </div>
-                </>
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => {
+                    navigate('/profile');
+                    setMobileMenuOpen(false);
+                  }}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
+                </div>
               ) : (
                 <Button onClick={() => {
                   navigate('/login');

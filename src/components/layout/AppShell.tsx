@@ -1,7 +1,6 @@
 
 import { ReactNode } from 'react';
 import Navbar from './Navbar';
-import Sidebar from './Sidebar';
 import { useAuth } from '@/context/AuthContext';
 
 interface AppShellProps {
@@ -26,15 +25,11 @@ const AppShell = ({ children }: AppShellProps) => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <div className="flex flex-1 overflow-hidden">
-        {user && <Sidebar />}
-        
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
-          <div className="app-container animate-fade-in">
-            {children}
-          </div>
-        </main>
-      </div>
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
+        <div className="app-container animate-fade-in">
+          {children}
+        </div>
+      </main>
     </div>
   );
 };
