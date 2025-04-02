@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -31,6 +31,7 @@ const RichTextEditor = ({
   minHeight = '300px'
 }: RichTextEditorProps) => {
   const [content, setContent] = useState(initialContent);
+  const [isFocused, setIsFocused] = useState(false);
   
   const handleCommand = (command: string, value: string | null = null) => {
     document.execCommand(command, false, value);
@@ -172,11 +173,16 @@ const RichTextEditor = ({
       <div 
         id="editor" 
         contentEditable 
-        className="p-4 focus:outline-none overflow-auto"
+        className={cn(
+          "p-4 focus:outline-none overflow-auto relative",
+          content === '' && !isFocused && "after:content-[attr(data-placeholder)] after:text-muted-foreground after:absolute after:left-4 after:top-4 after:pointer-events-none"
+        )}
         style={{ minHeight }}
         dangerouslySetInnerHTML={{ __html: content }}
         onInput={handleContentChange}
-        placeholder={placeholder}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        data-placeholder={placeholder}
       />
     </div>
   );
