@@ -27,7 +27,10 @@ const SubmissionsPage = () => {
 
   // Filter submissions when tab changes or submissions change
   useEffect(() => {
-    if (!userSubmissions) return;
+    if (!userSubmissions) {
+      setFilteredSubmissions([]);
+      return;
+    }
 
     if (activeTab === "all") {
       setFilteredSubmissions(userSubmissions);
@@ -57,8 +60,8 @@ const SubmissionsPage = () => {
 
   const isAuthor = user?.role === "author";
   
-  // Get unique submission statuses
-  const submissionStatuses = [...new Set(userSubmissions.map(s => s.status))];
+  // Fix: Add default empty array to avoid undefined errors
+  const submissionStatuses = [...new Set((userSubmissions || []).map(s => s.status))];
   
   // Create tabs based on available statuses
   const renderTabs = () => {
@@ -89,7 +92,7 @@ const SubmissionsPage = () => {
           )}
         </TabsList>
         
-        <TabsContent value={activeTab}>
+        <TabsContent value={activeTab} className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSubmissions.map((submission) => (
               <SubmissionCard key={submission.id} submission={submission} />
@@ -120,7 +123,7 @@ const SubmissionsPage = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="mb-2">Submissions</h1>
+          <h1 className="text-2xl font-bold mb-2">Submissions</h1>
           <p className="text-muted-foreground">
             {isAuthor 
               ? "Manage your manuscript submissions" 
@@ -147,8 +150,10 @@ const SubmissionsPage = () => {
           <p className="text-destructive mb-4">{error}</p>
           <Button onClick={() => fetchSubmissions()}>Retry</Button>
         </div>
-      ) : userSubmissions.length === 0 ? (
-        <div className="text-center py-16">
+      ) : userSubmissions && userSubmissions.length > 0 ? (
+        renderTabs()
+      ) : (
+        <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
           <h3 className="text-xl font-medium mb-2">No submissions found</h3>
           <p className="text-muted-foreground mb-6">
             {isAuthor
@@ -161,8 +166,6 @@ const SubmissionsPage = () => {
             </Button>
           )}
         </div>
-      ) : (
-        renderTabs()
       )}
     </div>
   );
