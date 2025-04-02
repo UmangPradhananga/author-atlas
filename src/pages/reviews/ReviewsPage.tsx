@@ -4,8 +4,12 @@ import { submissionsApi } from "@/api/apiService";
 import { useAuth } from "@/context/AuthContext";
 import { Submission } from "@/types";
 import { useNavigate } from "react-router-dom";
-import ReviewCard from "@/components/reviews/ReviewCard";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, CheckCircle, Clock, User } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { format } from "date-fns";
 
 const ReviewsPage = () => {
   const { user } = useAuth();
@@ -71,6 +75,83 @@ const ReviewsPage = () => {
     return submission.reviews.find(review => review.reviewerId === user.id);
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
+  const renderSubmissionCard = (submission: Submission) => {
+    const review = getReviewForSubmission(submission);
+    const isDueSoon = review && !review.completed && new Date(review.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const isOverdue = review && !review.completed && new Date(review.dueDate) < new Date();
+
+    return (
+      <Card key={submission.id} className="hover:shadow-md transition-shadow">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-lg line-clamp-1">{submission.title}</CardTitle>
+            {review && (
+              review.completed ? (
+                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              ) : isOverdue ? (
+                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Overdue
+                </Badge>
+              ) : isDueSoon ? (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Due Soon
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Assigned
+                </Badge>
+              )
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pb-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+            {submission.abstract}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <div className="flex items-center">
+              <User className="h-4 w-4 mr-1 text-muted-foreground" />
+              <span className="text-sm">
+                {submission.authors.slice(0, 2).join(', ')}
+                {submission.authors.length > 2 && ' et al.'}
+              </span>
+            </div>
+            {review && (
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-sm">Due: {formatDate(review.dueDate)}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full"
+            onClick={() => navigate(`/reviews/${submission.id}`)}
+          >
+            {review?.completed ? 'View Review' : 'Review Manuscript'}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -125,13 +206,7 @@ const ReviewsPage = () => {
           <TabsContent value="pending" className="mt-6">
             {pendingReviews.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingReviews.map((submission) => (
-                  <ReviewCard 
-                    key={submission.id} 
-                    submission={submission} 
-                    review={getReviewForSubmission(submission)}
-                  />
-                ))}
+                {pendingReviews.map(renderSubmissionCard)}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -146,13 +221,7 @@ const ReviewsPage = () => {
           <TabsContent value="completed" className="mt-6">
             {completedReviews.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedReviews.map((submission) => (
-                  <ReviewCard 
-                    key={submission.id} 
-                    submission={submission} 
-                    review={getReviewForSubmission(submission)}
-                  />
-                ))}
+                {completedReviews.map(renderSubmissionCard)}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -168,12 +237,7 @@ const ReviewsPage = () => {
             <TabsContent value="assignable" className="mt-6">
               {assignableSubmissions.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {assignableSubmissions.map((submission) => (
-                    <ReviewCard 
-                      key={submission.id} 
-                      submission={submission}
-                    />
-                  ))}
+                  {assignableSubmissions.map(renderSubmissionCard)}
                 </div>
               ) : (
                 <div className="text-center py-12">

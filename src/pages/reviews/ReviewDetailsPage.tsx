@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { submissionsApi, reviewsApi } from "@/api/apiService";
+import { submissionsApi } from "@/api/apiService";
+import { reviewsApi } from "@/api/reviewsApi";
 import { Submission, Review } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
