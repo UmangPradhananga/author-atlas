@@ -11,11 +11,15 @@ interface StatsCardProps {
     value: number;
     isPositive: boolean;
   };
+  onClick?: () => void;
 }
 
-const StatsCard = ({ title, value, icon, description, trend }: StatsCardProps) => {
+const StatsCard = ({ title, value, icon, description, trend, onClick }: StatsCardProps) => {
   return (
-    <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-primary overflow-hidden relative">
+    <Card 
+      className={`hover:shadow-md transition-all duration-300 border-l-4 border-l-primary overflow-hidden relative ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-r from-transparent to-primary/5"></div>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>

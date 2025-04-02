@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardApi } from "@/api/apiService";
@@ -20,7 +19,6 @@ const DashboardPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Sample data for our new charts
   const categoryData = [
     { name: 'Computer Science', value: 45 },
     { name: 'Medicine', value: 35 },
@@ -128,17 +126,20 @@ const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardC
           value={stats.totalSubmissions}
           icon={<FileText />}
           trend={{ value: 12, isPositive: true }}
+          onClick={() => navigate('/submissions')}
         />
         <StatsCard
           title="Pending Reviews"
           value={stats.pendingReviews}
           icon={<Clock />}
+          onClick={() => navigate('/reviews')}
         />
         <StatsCard
           title="Published Articles"
           value={stats.publishedArticles}
           icon={<BookOpen />}
           trend={{ value: 8, isPositive: true }}
+          onClick={() => navigate('/articles')}
         />
         <StatsCard
           title="Active Users"
@@ -148,7 +149,6 @@ const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardC
         />
       </div>
 
-      {/* Enhanced charts section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {trendComparisonData && (
           <TrendComparisonChart 
@@ -186,25 +186,28 @@ const EditorDashboard = ({ stats, categoryData, trendComparisonData }: Dashboard
           title="New Submissions"
           value={stats.totalSubmissions}
           icon={<FileText />}
+          onClick={() => navigate('/submissions')}
         />
         <StatsCard
           title="Awaiting Decision"
           value={stats.underReviewSubmissions}
           icon={<Clock />}
+          onClick={() => navigate('/submissions?status=under_review')}
         />
         <StatsCard
           title="Accepted"
           value={stats.acceptedSubmissions}
           icon={<CheckCircle />}
+          onClick={() => navigate('/submissions?status=accepted')}
         />
         <StatsCard
           title="Rejected"
           value={stats.rejectedSubmissions}
           icon={<XCircle />}
+          onClick={() => navigate('/submissions?status=rejected')}
         />
       </div>
 
-      {/* Enhanced charts section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {trendComparisonData && (
           <TrendComparisonChart 
@@ -245,11 +248,13 @@ const ReviewerDashboard = ({ stats }: DashboardComponentProps) => {
           title="Assigned Reviews"
           value={stats.pendingReviews}
           icon={<Clock />}
+          onClick={() => navigate('/reviews')}
         />
         <StatsCard
           title="Completed Reviews"
           value="14"
           icon={<CheckCircle />}
+          onClick={() => navigate('/reviews?tab=completed')}
         />
         <StatsCard
           title="Average Review Time"
@@ -282,21 +287,25 @@ const AuthorDashboard = ({ stats }: DashboardComponentProps) => {
           title="My Submissions"
           value="7"
           icon={<FileText />}
+          onClick={() => navigate('/submissions')}
         />
         <StatsCard
           title="Under Review"
           value="2"
           icon={<Clock />}
+          onClick={() => navigate('/submissions?status=under_review')}
         />
         <StatsCard
           title="Accepted"
           value="3"
           icon={<CheckCircle />}
+          onClick={() => navigate('/submissions?status=accepted')}
         />
         <StatsCard
           title="Published"
           value="2"
           icon={<BookOpen />}
+          onClick={() => navigate('/submissions?status=published')}
         />
       </div>
 
@@ -322,12 +331,14 @@ const ReaderDashboard = ({ stats }: DashboardComponentProps) => {
           title="Available Articles"
           value={stats.publishedArticles}
           icon={<BookOpen />}
+          onClick={() => navigate('/articles')}
         />
         <StatsCard
           title="Recently Published"
           value="12"
           icon={<FileText />}
           description="Articles published in the last month"
+          onClick={() => navigate('/articles')}
         />
         <StatsCard
           title="Categories"

@@ -6,15 +6,24 @@ import { Submission, SubmissionStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import SubmissionCard from "@/components/submissions/SubmissionCard";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 const SubmissionsPage = () => {
   const { user } = useAuth();
   const { userSubmissions, loading, error, fetchSubmissions } = useSubmissions();
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [searchParams] = useSearchParams();
+  const statusParam = searchParams.get('status') as SubmissionStatus | null;
+  const [activeTab, setActiveTab] = useState<string>(statusParam || "all");
   const [filteredSubmissions, setFilteredSubmissions] = useState<Submission[]>([]);
   const navigate = useNavigate();
+
+  // Set active tab based on URL param when component mounts
+  useEffect(() => {
+    if (statusParam) {
+      setActiveTab(statusParam);
+    }
+  }, [statusParam]);
 
   // Filter submissions when tab changes or submissions change
   useEffect(() => {
@@ -36,6 +45,16 @@ const SubmissionsPage = () => {
     fetchSubmissions();
   }, [fetchSubmissions]);
 
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === "all") {
+      navigate("/submissions");
+    } else {
+      navigate(`/submissions?status=${value}`);
+    }
+  };
+
   const isAuthor = user?.role === "author";
   
   // Get unique submission statuses
@@ -44,7 +63,7 @@ const SubmissionsPage = () => {
   // Create tabs based on available statuses
   const renderTabs = () => {
     return (
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="all" value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="mb-8">
           <TabsTrigger value="all">All Submissions</TabsTrigger>
           {submissionStatuses.includes('draft') && (
