@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardApi } from "@/api/apiService";
 import { DashboardStats } from "@/types";
-import { FileText, Users, CheckCircle, XCircle, Clock, BookOpen } from "lucide-react";
+import { FileText, Users, CheckCircle, XCircle, Clock, BookOpen, LineChart, PieChart, BarChart } from "lucide-react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import SubmissionChart from "@/components/dashboard/SubmissionChart";
 import DecisionChart from "@/components/dashboard/DecisionChart";
 import ReviewTimeChart from "@/components/dashboard/ReviewTimeChart";
+import CategoryDistributionChart from "@/components/dashboard/CategoryDistributionChart";
+import TrendComparisonChart from "@/components/dashboard/TrendComparisonChart";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +19,25 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // Sample data for our new charts
+  const categoryData = [
+    { name: 'Computer Science', value: 45 },
+    { name: 'Medicine', value: 35 },
+    { name: 'Biology', value: 28 },
+    { name: 'Physics', value: 15 },
+    { name: 'Chemistry', value: 12 },
+    { name: 'Mathematics', value: 8 }
+  ];
+
+  const trendComparisonData = [
+    { month: 'Jan', submissions: 40, published: 20, rejected: 10 },
+    { month: 'Feb', submissions: 35, published: 15, rejected: 12 },
+    { month: 'Mar', submissions: 50, published: 22, rejected: 18 },
+    { month: 'Apr', submissions: 45, published: 25, rejected: 15 },
+    { month: 'May', submissions: 60, published: 30, rejected: 20 },
+    { month: 'Jun', submissions: 75, published: 35, rejected: 25 },
+  ];
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -64,9 +85,9 @@ const DashboardPage = () => {
   const renderRoleDashboard = () => {
     switch (user.role) {
       case "admin":
-        return <AdminDashboard stats={stats!} />;
+        return <AdminDashboard stats={stats!} categoryData={categoryData} trendComparisonData={trendComparisonData} />;
       case "editor":
-        return <EditorDashboard stats={stats!} />;
+        return <EditorDashboard stats={stats!} categoryData={categoryData} trendComparisonData={trendComparisonData} />;
       case "reviewer":
         return <ReviewerDashboard stats={stats!} />;
       case "author":
@@ -92,9 +113,11 @@ const DashboardPage = () => {
 
 interface DashboardComponentProps {
   stats: DashboardStats;
+  categoryData?: {name: string, value: number}[];
+  trendComparisonData?: {month: string, submissions: number, published: number, rejected: number}[];
 }
 
-const AdminDashboard = ({ stats }: DashboardComponentProps) => {
+const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardComponentProps) => {
   const navigate = useNavigate();
   
   return (
@@ -125,12 +148,23 @@ const AdminDashboard = ({ stats }: DashboardComponentProps) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Enhanced charts section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        {trendComparisonData && (
+          <TrendComparisonChart 
+            data={trendComparisonData} 
+            title="Submission & Publication Trends"
+          />
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <SubmissionChart
           data={stats.submissionTrends}
           title="Submission Trends"
         />
         <DecisionChart data={stats.decisionRates} />
+        {categoryData && <CategoryDistributionChart data={categoryData} />}
       </div>
 
       <div className="flex justify-end mt-6">
@@ -142,7 +176,7 @@ const AdminDashboard = ({ stats }: DashboardComponentProps) => {
   );
 };
 
-const EditorDashboard = ({ stats }: DashboardComponentProps) => {
+const EditorDashboard = ({ stats, categoryData, trendComparisonData }: DashboardComponentProps) => {
   const navigate = useNavigate();
   
   return (
@@ -170,12 +204,23 @@ const EditorDashboard = ({ stats }: DashboardComponentProps) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Enhanced charts section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        {trendComparisonData && (
+          <TrendComparisonChart 
+            data={trendComparisonData} 
+            title="Submission & Publication Trends"
+          />
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <SubmissionChart
           data={stats.submissionTrends}
           title="Submission Trends"
         />
         <ReviewTimeChart data={stats.reviewTimes} />
+        {categoryData && <CategoryDistributionChart data={categoryData} />}
       </div>
 
       <div className="flex justify-end mt-6">
@@ -213,8 +258,9 @@ const ReviewerDashboard = ({ stats }: DashboardComponentProps) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <ReviewTimeChart data={stats.reviewTimes} />
+        <DecisionChart data={stats.decisionRates} />
       </div>
 
       <div className="flex justify-end mt-6">
