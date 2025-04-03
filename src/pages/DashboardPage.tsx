@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardApi } from "@/api/apiService";
 import { DashboardStats } from "@/types";
-import { FileText, Users, CheckCircle, XCircle, Clock, BookOpen, LineChart, PieChart, BarChart } from "lucide-react";
+import { FileText, Users, CheckCircle, XCircle, Clock, BookOpen, LineChart, PieChart, BarChart, Activity, Bell } from "lucide-react";
 import StatsCard from "@/components/dashboard/StatsCard";
 import SubmissionChart from "@/components/dashboard/SubmissionChart";
 import DecisionChart from "@/components/dashboard/DecisionChart";
@@ -11,6 +11,8 @@ import CategoryDistributionChart from "@/components/dashboard/CategoryDistributi
 import TrendComparisonChart from "@/components/dashboard/TrendComparisonChart";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -118,6 +120,21 @@ interface DashboardComponentProps {
 const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardComponentProps) => {
   const navigate = useNavigate();
   
+  const recentActivities = [
+    { id: 1, user: "Dr. John Smith", action: "Submitted manuscript", target: "Quantum Computing Applications", time: "10 minutes ago" },
+    { id: 2, user: "Dr. Sarah Johnson", action: "Completed review for", target: "AI in Medical Diagnostics", time: "45 minutes ago" },
+    { id: 3, user: "Dr. Emma Wilson", action: "Requested revision for", target: "Climate Change Metrics", time: "2 hours ago" },
+    { id: 4, user: "Prof. Michael Lee", action: "Published article", target: "Neural Networks: A New Approach", time: "3 hours ago" },
+    { id: 5, user: "Dr. Robert Chen", action: "Assigned reviewers to", target: "Genetics and Evolution", time: "5 hours ago" },
+  ];
+
+  const journalMetrics = [
+    { name: "Acceptance Rate", value: 38, target: 40 },
+    { name: "Average Review Time", value: 75, target: 100 },
+    { name: "Reviewer Response Rate", value: 82, target: 90 },
+    { name: "Submission Growth", value: 65, target: 70 },
+  ];
+  
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -150,6 +167,59 @@ const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardC
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="col-span-2 bg-card rounded-lg border shadow-sm">
+          <div className="p-6 border-b">
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">Recent Activity</h3>
+          </div>
+          <div className="p-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Activity</TableHead>
+                  <TableHead>Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentActivities.map((activity) => (
+                  <TableRow key={activity.id}>
+                    <TableCell className="font-medium">{activity.user}</TableCell>
+                    <TableCell>
+                      {activity.action} <span className="font-semibold">{activity.target}</span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{activity.time}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="mt-4">
+              <Button variant="outline" size="sm" onClick={() => navigate("/activities")} className="w-full">
+                View All Activities
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-span-1 bg-card rounded-lg border shadow-sm">
+          <div className="p-6 border-b">
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">Journal Metrics</h3>
+          </div>
+          <div className="p-6 space-y-6">
+            {journalMetrics.map((metric) => (
+              <div key={metric.name} className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">{metric.name}</span>
+                  <span className="text-sm font-medium">{metric.value}%</span>
+                </div>
+                <Progress value={metric.value} className="h-2" />
+                <p className="text-xs text-muted-foreground">Target: {metric.target}%</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {trendComparisonData && (
           <TrendComparisonChart 
             data={trendComparisonData} 
@@ -158,7 +228,7 @@ const AdminDashboard = ({ stats, categoryData, trendComparisonData }: DashboardC
         )}
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <SubmissionChart
           data={stats.submissionTrends}
           title="Submission Trends"
