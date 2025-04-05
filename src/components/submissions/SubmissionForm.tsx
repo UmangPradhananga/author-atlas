@@ -16,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Upload, FileText, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const SubmissionForm = () => {
   const { createSubmission } = useSubmissions();
@@ -30,7 +31,12 @@ const SubmissionForm = () => {
     keywords: [""],
     coverLetter: "",
     category: "",
-    document: "", // In a real app, this would be a file upload URL
+    document: "", // URL or file reference
+  });
+
+  const [fileInputs, setFileInputs] = useState({
+    manuscript: null as File | null,
+    supplementary: null as File | null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +44,46 @@ const SubmissionForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'manuscript' | 'supplementary') => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Check file size (20MB max)
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 20MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // For manuscript, check if it's a PDF
+      if (fileType === 'manuscript' && file.type !== 'application/pdf') {
+        toast({
+          title: "Invalid file type",
+          description: "Manuscript must be a PDF file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFileInputs({
+        ...fileInputs,
+        [fileType]: file
+      });
+      
+      // In a real app, we would upload the file and get a URL
+      // For demo, we'll just set the filename as the document
+      if (fileType === 'manuscript') {
+        setFormData({
+          ...formData,
+          document: file.name // In real app, this would be the file URL after upload
+        });
+      }
+    }
   };
 
   const handleAuthorChange = (index: number, value: string) => {
@@ -102,10 +148,22 @@ const SubmissionForm = () => {
       });
       return;
     }
+    
+    if (!fileInputs.manuscript) {
+      toast({
+        title: "Error",
+        description: "Manuscript file is required",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     
     try {
+      // In a real app, we would upload the files here and get URLs
+      // For demo purposes, we'll just use the file names
+      
       // Filter out empty values
       const cleanedAuthors = formData.authors.filter(author => author.trim() !== "");
       const cleanedKeywords = formData.keywords.filter(keyword => keyword.trim() !== "");
@@ -114,6 +172,8 @@ const SubmissionForm = () => {
         ...formData,
         authors: cleanedAuthors,
         keywords: cleanedKeywords,
+        // In a real app, document would be the URL of the uploaded file
+        document: fileInputs.manuscript ? fileInputs.manuscript.name : "",
       };
 
       const newSubmission = await createSubmission(submission);
@@ -139,6 +199,110 @@ const SubmissionForm = () => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Manuscript Upload</CardTitle>
+            <CardDescription>
+              Upload your manuscript and any supplementary files.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="manuscript">Manuscript File (PDF)*</Label>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="manuscript"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {fileInputs.manuscript ? (
+                        <>
+                          <FileText className="w-8 h-8 mb-2 text-primary" />
+                          <p className="text-sm text-primary font-semibold">{fileInputs.manuscript.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(fileInputs.manuscript.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                          <p className="mb-1 text-sm text-muted-foreground">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            PDF (MAX 20MB)
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <input 
+                      id="manuscript" 
+                      type="file" 
+                      accept=".pdf" 
+                      className="hidden" 
+                      onChange={(e) => handleFileChange(e, 'manuscript')}
+                    />
+                  </label>
+                </div>
+              </div>
+              {!fileInputs.manuscript && (
+                <p className="text-xs text-muted-foreground">
+                  Upload your complete manuscript in PDF format.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplementary">Supplementary Files (Optional)</Label>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="supplementary"
+                    className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {fileInputs.supplementary ? (
+                        <>
+                          <FileText className="w-6 h-6 mb-1 text-primary" />
+                          <p className="text-sm text-primary font-semibold">{fileInputs.supplementary.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(fileInputs.supplementary.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            Upload supplementary files (MAX 20MB)
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <input 
+                      id="supplementary" 
+                      type="file" 
+                      className="hidden" 
+                      onChange={(e) => handleFileChange(e, 'supplementary')}
+                    />
+                  </label>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Include any additional files that support your manuscript.
+              </p>
+            </div>
+
+            <Alert className="bg-muted/50 border-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Important</AlertTitle>
+              <AlertDescription>
+                Files are not actually uploaded in this demo. In a real application, files would be securely stored.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Manuscript Information</CardTitle>
@@ -259,21 +423,6 @@ const SubmissionForm = () => {
                 placeholder="Enter your cover letter to the editor"
                 className="min-h-24"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="document">Manuscript PDF Link*</Label>
-              <Input
-                id="document"
-                name="document"
-                value={formData.document}
-                onChange={handleChange}
-                placeholder="Enter a link to your manuscript PDF"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                In a real application, this would be a file upload component.
-              </p>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">

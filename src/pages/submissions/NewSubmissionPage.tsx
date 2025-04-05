@@ -2,13 +2,12 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import RichTextEditor from "@/components/editor/RichTextEditor";
 import { Button } from "@/components/ui/button";
+import SubmissionForm from "@/components/submissions/SubmissionForm";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -38,46 +37,16 @@ const NewSubmissionPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Manuscript Editor</CardTitle>
-            <CardDescription>
-              Write or paste your manuscript content here. Use the formatting toolbar to style your text.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RichTextEditor 
-              placeholder="Begin typing your manuscript or paste your content here..."
-              minHeight="500px"
-            />
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <SubmissionForm />
+        </div>
 
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Submission Form</CardTitle>
+              <CardTitle>Submission Guidelines</CardTitle>
               <CardDescription>
-                Fill out the required details for your submission.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Complete the submission form with all required information.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate('/submissions/new')}>
-                Open Form
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Guidelines</CardTitle>
-              <CardDescription>
-                Review submission guidelines before submitting.
+                Review these guidelines before submitting your manuscript.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -86,7 +55,27 @@ const NewSubmissionPage = () => {
                 <li>Include comprehensive literature review</li>
                 <li>Provide detailed methodology</li>
                 <li>Ensure proper citation format</li>
+                <li>All figures and tables should be properly labeled</li>
+                <li>Submit in PDF format (max 20MB)</li>
                 <li>Proofread for grammar and spelling</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>File Requirements</CardTitle>
+              <CardDescription>
+                Ensure your files meet these requirements.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                <li>Main manuscript: PDF format</li>
+                <li>Supplementary files: ZIP archive (if applicable)</li>
+                <li>Maximum file size: 20MB per file</li>
+                <li>Figures should be at least 300 DPI resolution</li>
+                <li>Tables should be embedded in the manuscript</li>
               </ul>
             </CardContent>
           </Card>
