@@ -21,6 +21,7 @@ import SubmissionDetailPage from "./pages/submissions/SubmissionDetailPage";
 import NewSubmissionPage from "./pages/submissions/NewSubmissionPage";
 import ReviewsPage from "./pages/reviews/ReviewsPage";
 import ReviewDetailsPage from "./pages/reviews/ReviewDetailsPage";
+import UsersPage from "./pages/admin/UsersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,8 @@ const App = () => (
                 
                 <Route path="/reviews" element={<ReviewsPage />} />
                 <Route path="/reviews/:id" element={<ReviewDetailsPage />} />
+                
+                <Route path="/users" element={<UsersPage />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
