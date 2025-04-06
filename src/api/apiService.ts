@@ -1,3 +1,4 @@
+
 import { User, Submission, Review, DashboardStats, Role } from '../types';
 import { users, submissions, dashboardStats } from './mockData';
 
@@ -63,6 +64,69 @@ export const usersApi = {
   getUsersByRole: async (role: string): Promise<User[]> => {
     await delay(400);
     return users.filter(user => user.role === role);
+  },
+  
+  // New method for creating user
+  createUser: async (userData: Partial<User>): Promise<User> => {
+    await delay(600);
+    
+    // Check if user with email already exists
+    const existingUser = users.find(u => u.email === userData.email);
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+    
+    // Create new user with required fields
+    const newUser: User = {
+      id: `user-${Date.now().toString(36)}`,
+      name: userData.name || 'New User',
+      email: userData.email || '',
+      role: userData.role || 'reader',
+      avatar: userData.avatar,
+      affiliation: userData.affiliation,
+      bio: userData.bio,
+    };
+    
+    // In a real app, this would be persisted to a database
+    users.push(newUser); // Add to in-memory array for mock data
+    
+    return newUser;
+  },
+  
+  // New method for updating user
+  updateUser: async (id: string, updates: Partial<User>): Promise<User> => {
+    await delay(500);
+    
+    // Find the user to update
+    const userIndex = users.findIndex(u => u.id === id);
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
+    
+    // Update the user (in a real API, this would persist to a database)
+    const updatedUser = {
+      ...users[userIndex],
+      ...updates,
+    };
+    
+    // In a real app, this would be persisted to a database
+    users[userIndex] = updatedUser; // Update in-memory array for mock data
+    
+    return updatedUser;
+  },
+  
+  // New method for deleting user
+  deleteUser: async (id: string): Promise<void> => {
+    await delay(400);
+    
+    // Find the user to delete
+    const userIndex = users.findIndex(u => u.id === id);
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
+    
+    // In a real app, this would be persisted to a database
+    users.splice(userIndex, 1); // Remove from in-memory array for mock data
   }
 };
 
