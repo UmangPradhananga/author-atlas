@@ -2,22 +2,26 @@
 import { useState, useEffect } from "react";
 import { submissionsApi } from "@/api/apiService";
 import { useAuth } from "@/context/AuthContext";
-import { Submission } from "@/types";
+import { Submission, PeerReviewType } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Clock, User } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, User, Info } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ReviewsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [filteredSubmissions, setFilteredSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("pending");
+  const [peerReviewFilter, setPeerReviewFilter] = useState<string>("all");
 
   useEffect(() => {
     const fetchReviewSubmissions = async () => {
@@ -49,22 +53,40 @@ const ReviewsPage = () => {
     fetchReviewSubmissions();
   }, [user]);
 
+  // Filter submissions based on peer review type
+  useEffect(() => {
+    if (!submissions) {
+      setFilteredSubmissions([]);
+      return;
+    }
+
+    if (peerReviewFilter === "all") {
+      setFilteredSubmissions(submissions);
+    } else {
+      setFilteredSubmissions(
+        submissions.filter(
+          (submission) => submission.peerReviewType === peerReviewFilter
+        )
+      );
+    }
+  }, [peerReviewFilter, submissions]);
+
   // If not a reviewer or editor, redirect to dashboard
   if (user && user.role !== "reviewer" && user.role !== "editor" && user.role !== "admin") {
     navigate("/dashboard");
     return null;
   }
 
-  const pendingReviews = submissions.filter(submission => 
+  const pendingReviews = filteredSubmissions.filter(submission => 
     submission.status === "under_review" && 
     submission.reviews?.some(review => !review.completed)
   );
 
-  const completedReviews = submissions.filter(submission => 
+  const completedReviews = filteredSubmissions.filter(submission => 
     submission.reviews?.some(review => review.completed)
   );
 
-  const assignableSubmissions = submissions.filter(submission => 
+  const assignableSubmissions = filteredSubmissions.filter(submission => 
     submission.status === "submitted" && 
     (user?.role === "editor" || user?.role === "admin")
   );
@@ -81,6 +103,46 @@ const ReviewsPage = () => {
     } catch (e) {
       return 'Invalid date';
     }
+  };
+
+  const getPeerReviewLabel = (type: PeerReviewType): string => {
+    switch (type) {
+      case 'open': return 'Open Review';
+      case 'single_blind': return 'Single-Blind';
+      case 'double_blind': return 'Double-Blind';
+      default: return type;
+    }
+  };
+
+  const renderReviewTypeTooltip = (type: PeerReviewType) => {
+    let tooltipContent = '';
+    switch (type) {
+      case 'open':
+        tooltipContent = 'Both authors and reviewers know each other's identities';
+        break;
+      case 'single_blind':
+        tooltipContent = 'Reviewers know author identities, but authors don't know reviewers';
+        break;
+      case 'double_blind':
+        tooltipContent = 'Both authors and reviewers remain anonymous to each other';
+        break;
+    }
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-help">
+              {getPeerReviewLabel(type)}
+              <Info className="ml-1 h-3 w-3" />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-xs">{tooltipContent}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   const renderSubmissionCard = (submission: Submission) => {
@@ -130,6 +192,7 @@ const ReviewsPage = () => {
                 {submission.authors.length > 2 && ' et al.'}
               </span>
             </div>
+            {renderReviewTypeTooltip(submission.peerReviewType)}
             {review && (
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -188,68 +251,89 @@ const ReviewsPage = () => {
           </p>
         </div>
       ) : (
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="pending">
-              Pending Reviews {pendingReviews.length > 0 && `(${pendingReviews.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              Completed Reviews {completedReviews.length > 0 && `(${completedReviews.length})`}
-            </TabsTrigger>
-            {(user?.role === "editor" || user?.role === "admin") && (
-              <TabsTrigger value="assignable">
-                To Be Assigned {assignableSubmissions.length > 0 && `(${assignableSubmissions.length})`}
+        <>
+          <div className="flex justify-between items-center">
+            <div className="w-64">
+              <Select
+                value={peerReviewFilter}
+                onValueChange={setPeerReviewFilter}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by review type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Review Types</SelectItem>
+                  <SelectItem value="open">Open Review</SelectItem>
+                  <SelectItem value="single_blind">Single-Blind Review</SelectItem>
+                  <SelectItem value="double_blind">Double-Blind Review</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="pending">
+                Pending Reviews {pendingReviews.length > 0 && `(${pendingReviews.length})`}
               </TabsTrigger>
-            )}
-          </TabsList>
-          
-          <TabsContent value="pending" className="mt-6">
-            {pendingReviews.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingReviews.map(renderSubmissionCard)}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="text-xl font-medium mb-2">No Pending Reviews</h3>
-                <p className="text-muted-foreground">
-                  You don't have any pending reviews at the moment.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="completed" className="mt-6">
-            {completedReviews.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedReviews.map(renderSubmissionCard)}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="text-xl font-medium mb-2">No Completed Reviews</h3>
-                <p className="text-muted-foreground">
-                  You haven't completed any reviews yet.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-          
-          {(user?.role === "editor" || user?.role === "admin") && (
-            <TabsContent value="assignable" className="mt-6">
-              {assignableSubmissions.length > 0 ? (
+              <TabsTrigger value="completed">
+                Completed Reviews {completedReviews.length > 0 && `(${completedReviews.length})`}
+              </TabsTrigger>
+              {(user?.role === "editor" || user?.role === "admin") && (
+                <TabsTrigger value="assignable">
+                  To Be Assigned {assignableSubmissions.length > 0 && `(${assignableSubmissions.length})`}
+                </TabsTrigger>
+              )}
+            </TabsList>
+            
+            <TabsContent value="pending" className="mt-6">
+              {pendingReviews.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {assignableSubmissions.map(renderSubmissionCard)}
+                  {pendingReviews.map(renderSubmissionCard)}
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No Submissions To Assign</h3>
+                  <h3 className="text-xl font-medium mb-2">No Pending Reviews</h3>
                   <p className="text-muted-foreground">
-                    There are no submissions waiting for reviewer assignment.
+                    You don't have any pending reviews at the moment.
                   </p>
                 </div>
               )}
             </TabsContent>
-          )}
-        </Tabs>
+            
+            <TabsContent value="completed" className="mt-6">
+              {completedReviews.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {completedReviews.map(renderSubmissionCard)}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <h3 className="text-xl font-medium mb-2">No Completed Reviews</h3>
+                  <p className="text-muted-foreground">
+                    You haven't completed any reviews yet.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            {(user?.role === "editor" || user?.role === "admin") && (
+              <TabsContent value="assignable" className="mt-6">
+                {assignableSubmissions.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {assignableSubmissions.map(renderSubmissionCard)}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <h3 className="text-xl font-medium mb-2">No Submissions To Assign</h3>
+                    <p className="text-muted-foreground">
+                      There are no submissions waiting for reviewer assignment.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+          </Tabs>
+        </>
       )}
     </div>
   );

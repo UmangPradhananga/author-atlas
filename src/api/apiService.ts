@@ -154,11 +154,20 @@ export const submissionsApi = {
     return submissions.filter(submission => submission.status === status);
   },
   
-  getReviewerSubmissions: async (reviewerId: string): Promise<Submission[]> => {
+  getReviewerSubmissions: async (reviewerId: string, peerReviewType?: PeerReviewType): Promise<Submission[]> => {
     await delay(500);
-    return submissions.filter(submission => 
+    let filteredSubmissions = submissions.filter(submission => 
       submission.reviewers?.includes(reviewerId)
     );
+    
+    // Apply peer review type filter if specified
+    if (peerReviewType) {
+      filteredSubmissions = filteredSubmissions.filter(
+        submission => submission.peerReviewType === peerReviewType
+      );
+    }
+    
+    return filteredSubmissions;
   },
   
   getEditorSubmissions: async (editorId: string): Promise<Submission[]> => {

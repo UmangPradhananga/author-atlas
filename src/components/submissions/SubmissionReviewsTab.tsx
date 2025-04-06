@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Review, SubmissionStatus } from "@/types";
+import { Review, SubmissionStatus, PeerReviewType } from "@/types";
 import {
   Card,
   CardContent,
@@ -9,7 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Clock, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SubmissionReviewsTabProps {
   reviews: Review[];
@@ -17,6 +18,7 @@ interface SubmissionReviewsTabProps {
   formatDate: (date?: string) => string;
   isEditor: boolean;
   isReviewer: boolean;
+  peerReviewType: PeerReviewType;
 }
 
 const SubmissionReviewsTab: React.FC<SubmissionReviewsTabProps> = ({
@@ -25,22 +27,75 @@ const SubmissionReviewsTab: React.FC<SubmissionReviewsTabProps> = ({
   formatDate,
   isEditor,
   isReviewer,
+  peerReviewType,
 }) => {
+  const getPeerReviewLabel = (type: PeerReviewType): string => {
+    switch (type) {
+      case 'open': return 'Open Review';
+      case 'single_blind': return 'Single-Blind';
+      case 'double_blind': return 'Double-Blind';
+      default: return type;
+    }
+  };
+
+  const renderReviewTypeTooltip = (type: PeerReviewType) => {
+    let tooltipContent = '';
+    switch (type) {
+      case 'open':
+        tooltipContent = 'Both authors and reviewers know each other's identities';
+        break;
+      case 'single_blind':
+        tooltipContent = 'Reviewers know author identities, but authors don't know reviewers';
+        break;
+      case 'double_blind':
+        tooltipContent = 'Both authors and reviewers remain anonymous to each other';
+        break;
+    }
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center cursor-help">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {getPeerReviewLabel(type)}
+              </Badge>
+              <Info className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-xs">{tooltipContent}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   if (reviews.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-xl font-medium mb-2">No Reviews Yet</h3>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           {submissionStatus === 'draft' || submissionStatus === 'submitted'
             ? "This submission hasn't been assigned for review yet."
             : "No reviews have been submitted for this manuscript."}
         </p>
+        <div className="flex justify-center">
+          {renderReviewTypeTooltip(peerReviewType)}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-medium">
+          Peer Review Process:
+        </div>
+        {renderReviewTypeTooltip(peerReviewType)}
+      </div>
+      
       {reviews.map((review) => (
         <Card key={review.id} className="transition-all">
           <CardHeader>
