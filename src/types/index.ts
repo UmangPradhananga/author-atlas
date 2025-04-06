@@ -1,5 +1,9 @@
+
 // User roles
 export type Role = 'admin' | 'editor' | 'reviewer' | 'author' | 'reader';
+
+// Peer review types
+export type PeerReviewType = 'open' | 'single_blind' | 'double_blind';
 
 // User profile
 export interface User {
@@ -10,7 +14,12 @@ export interface User {
   avatar?: string;
   affiliation?: string;
   bio?: string;
-  password?: string; // Added optional password field
+  password?: string;
+  reviewPreferences?: {
+    acceptsOpenReview: boolean;
+    acceptsSingleBlind: boolean;
+    acceptsDoubleBlind: boolean;
+  };
 }
 
 // Article submission status
@@ -49,6 +58,7 @@ export interface Submission {
   };
   category: string;
   publicationDate?: string;
+  peerReviewType: PeerReviewType;
 }
 
 // Review

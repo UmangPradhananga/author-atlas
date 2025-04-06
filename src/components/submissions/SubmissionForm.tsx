@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useSubmissions } from "@/context/SubmissionContext";
-import { Submission } from "@/types";
+import { Submission, PeerReviewType } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,8 +16,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PlusCircle, Trash2, Upload, FileText, AlertCircle } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { PlusCircle, Trash2, Upload, FileText, AlertCircle, Eye, EyeOff, User } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SubmissionForm = () => {
   const { createSubmission } = useSubmissions();
@@ -32,6 +45,7 @@ const SubmissionForm = () => {
     coverLetter: "",
     category: "",
     document: "", // URL or file reference
+    peerReviewType: "double_blind" as PeerReviewType, // Default to double-blind review
   });
 
   const [fileInputs, setFileInputs] = useState({
@@ -43,6 +57,10 @@ const SubmissionForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
   };
 
@@ -411,6 +429,66 @@ const SubmissionForm = () => {
                 placeholder="e.g., Computer Science, Medicine, Economics"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="peerReviewType">Peer Review Type*</Label>
+              <TooltipProvider>
+                <Select 
+                  value={formData.peerReviewType} 
+                  onValueChange={(value) => handleSelectChange("peerReviewType", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select peer review type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="open" className="flex items-center">
+                          <div className="flex items-center">
+                            <Eye className="h-4 w-4 mr-2" />
+                            <span>Open Review</span>
+                          </div>
+                        </SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Authors and reviewers are visible to each other. Encourages accountability and transparency.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="single_blind" className="flex items-center">
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-2" />
+                            <span>Single-Blind Review</span>
+                          </div>
+                        </SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Reviewers know author identities, but authors don't know who reviewed their work.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="double_blind" className="flex items-center">
+                          <div className="flex items-center">
+                            <EyeOff className="h-4 w-4 mr-2" />
+                            <span>Double-Blind Review</span>
+                          </div>
+                        </SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Both authors and reviewers remain anonymous to each other. Helps reduce bias in the review process.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </SelectContent>
+                </Select>
+              </TooltipProvider>
+              <p className="text-xs text-muted-foreground">
+                Select how you prefer your manuscript to be reviewed. This affects which reviewers will be selected.
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import SubmissionForm from "@/components/submissions/SubmissionForm";
+import { Eye, EyeOff, User } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -42,6 +43,48 @@ const NewSubmissionPage = () => {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Peer Review Types</CardTitle>
+              <CardDescription>
+                Choose the review type that best suits your submission.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <h3 className="font-medium">Open Review</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-6">
+                    Authors and reviewers are visible to each other. Encourages accountability and constructive dialogue.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    <h3 className="font-medium">Single-Blind Review</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-6">
+                    Reviewers know author identities, but authors don't know who reviewed their work.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <EyeOff className="h-4 w-4 text-primary" />
+                    <h3 className="font-medium">Double-Blind Review</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-6">
+                    Both authors and reviewers remain anonymous to each other. Helps reduce bias in the review process.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Submission Guidelines</CardTitle>
