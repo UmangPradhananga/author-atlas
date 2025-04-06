@@ -183,6 +183,7 @@ export const submissionsApi = {
       coverLetter: submission.coverLetter || '',
       correspondingAuthor: submission.correspondingAuthor || '',
       category: submission.category || 'Uncategorized',
+      peerReviewType: submission.peerReviewType || 'double_blind', // Default to double blind if not specified
     };
     
     return newSubmission;

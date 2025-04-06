@@ -68,6 +68,7 @@ export const submissions: Submission[] = [
     editorId: 'user-2',
     category: 'Computer Science',
     publicationDate: '2023-03-15T00:00:00Z',
+    peerReviewType: 'double_blind',
     reviews: [
       {
         id: 'rev-1',
@@ -109,6 +110,7 @@ export const submissions: Submission[] = [
     reviewers: ['user-3'],
     editorId: 'user-2',
     category: 'Environmental Science',
+    peerReviewType: 'single_blind',
     reviews: [
       {
         id: 'rev-2',
@@ -140,6 +142,7 @@ export const submissions: Submission[] = [
     coverLetter: 'Our research addresses critical issues in healthcare data security...',
     correspondingAuthor: 'user-4',
     category: 'Healthcare Technology',
+    peerReviewType: 'open',
   },
   {
     id: 'sub-4',
@@ -156,6 +159,7 @@ export const submissions: Submission[] = [
     reviewers: ['user-3'],
     editorId: 'user-2',
     category: 'Legal Technology',
+    peerReviewType: 'double_blind',
     reviews: [
       {
         id: 'rev-3',
@@ -197,6 +201,7 @@ export const submissions: Submission[] = [
     reviewers: ['user-3'],
     editorId: 'user-2',
     category: 'Environmental Engineering',
+    peerReviewType: 'double_blind',
     reviews: [
       {
         id: 'rev-4',
@@ -238,6 +243,7 @@ export const submissions: Submission[] = [
     reviewers: ['user-3'],
     editorId: 'user-2',
     category: 'Cybersecurity',
+    peerReviewType: 'single_blind',
     reviews: [
       {
         id: 'rev-5',
@@ -277,6 +283,7 @@ export const submissions: Submission[] = [
     coverLetter: 'Draft letter discussing ethical implications of AI in healthcare...',
     correspondingAuthor: 'user-4',
     category: 'Medical Ethics',
+    peerReviewType: 'open',
   },
 ];
 
