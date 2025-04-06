@@ -118,10 +118,10 @@ const ReviewsPage = () => {
     let tooltipContent = '';
     switch (type) {
       case 'open':
-        tooltipContent = 'Both authors and reviewers know each other's identities';
+        tooltipContent = 'Both authors and reviewers know each others identities';
         break;
       case 'single_blind':
-        tooltipContent = 'Reviewers know author identities, but authors don't know reviewers';
+        tooltipContent = 'Reviewers know author identities, but authors dont know reviewers';
         break;
       case 'double_blind':
         tooltipContent = 'Both authors and reviewers remain anonymous to each other';

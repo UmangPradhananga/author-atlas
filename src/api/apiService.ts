@@ -1,5 +1,5 @@
 
-import { User, Submission, Review, DashboardStats, Role } from '../types';
+import { User, Submission, Review, DashboardStats, Role, PeerReviewType } from '../types';
 import { users, submissions, dashboardStats } from './mockData';
 
 // Helper function to simulate API delay
