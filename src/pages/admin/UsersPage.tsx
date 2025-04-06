@@ -410,14 +410,14 @@ const UsersPage = () => {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select 
-                value={filteredRole || ""} 
-                onValueChange={(value) => setFilteredRole(value || null)}
+                value={filteredRole || "all"} 
+                onValueChange={(value) => setFilteredRole(value === "all" ? null : value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Roles</SelectItem>
+                  <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
                   <SelectItem value="reviewer">Reviewer</SelectItem>
