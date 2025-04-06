@@ -1,5 +1,4 @@
-
-import { User, Submission, Review, DashboardStats } from '../types';
+import { User, Submission, Review, DashboardStats, Role } from '../types';
 import { users, submissions, dashboardStats } from './mockData';
 
 // Helper function to simulate API delay
@@ -24,6 +23,28 @@ export const authApi = {
     
     // Return a default user for now (in real app this would come from token)
     return users[3]; // Author user
+  },
+  
+  signup: async (name: string, email: string, password: string, role: 'reader' | 'author'): Promise<User> => {
+    await delay(800); // Simulate API call
+    
+    // Check if user with email already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+    
+    // In a real app, this would create a new user in the database
+    const newUser: User = {
+      id: `user-${Date.now().toString(36)}`,
+      name,
+      email,
+      role: role as Role,
+      avatar: undefined,
+    };
+    
+    // In a real app, would add to the database and return the created user
+    return newUser;
   }
 };
 

@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types';
+import { User, Role } from '../types';
 import { authApi } from '../api/apiService';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  signup: (name: string, email: string, password: string, role: 'reader' | 'author') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +57,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signup = async (name: string, email: string, password: string, role: 'reader' | 'author') => {
+    setIsLoading(true);
+    try {
+      const newUser = await authApi.signup(name, email, password, role);
+      setUser(newUser);
+      toast({
+        title: 'Account created',
+        description: `Welcome to the Journal Manager, ${newUser.name}!`,
+      });
+    } catch (error) {
+      console.error('Signup failed:', error);
+      toast({
+        title: 'Signup failed',
+        description: 'Could not create your account. The email might already be in use.',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     // In a real app, would also clear tokens, cookies, etc.
@@ -66,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
