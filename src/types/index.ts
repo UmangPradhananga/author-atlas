@@ -1,4 +1,3 @@
-
 // User roles
 export type Role = 'admin' | 'editor' | 'reviewer' | 'author' | 'reader';
 
@@ -11,6 +10,7 @@ export interface User {
   avatar?: string;
   affiliation?: string;
   bio?: string;
+  password?: string; // Added optional password field
 }
 
 // Article submission status

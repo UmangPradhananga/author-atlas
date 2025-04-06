@@ -66,7 +66,7 @@ export const usersApi = {
     return users.filter(user => user.role === role);
   },
   
-  // New method for creating user
+  // Create user method (now handling password properly)
   createUser: async (userData: Partial<User>): Promise<User> => {
     await delay(600);
     
@@ -85,6 +85,8 @@ export const usersApi = {
       avatar: userData.avatar,
       affiliation: userData.affiliation,
       bio: userData.bio,
+      // In a real app, the password would be hashed before storing
+      password: userData.password
     };
     
     // In a real app, this would be persisted to a database
@@ -93,7 +95,7 @@ export const usersApi = {
     return newUser;
   },
   
-  // New method for updating user
+  // Update user method
   updateUser: async (id: string, updates: Partial<User>): Promise<User> => {
     await delay(500);
     
@@ -115,7 +117,7 @@ export const usersApi = {
     return updatedUser;
   },
   
-  // New method for deleting user
+  // Delete user method
   deleteUser: async (id: string): Promise<void> => {
     await delay(400);
     
