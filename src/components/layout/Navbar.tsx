@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Menu, X, BookOpen, LogOut, User, LayoutDashboard, 
+  Menu, X, LogOut, User, LayoutDashboard, 
   FileText, ClipboardCheck, Users, Settings, Plus 
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -61,7 +61,10 @@ const Navbar = () => {
       <div className="container flex h-16 items-center">
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
-            <BookOpen className="h-6 w-6 text-primary" />
+            {/* JMS Logo */}
+            <div className="flex items-center justify-center bg-primary text-primary-foreground rounded h-8 w-8 font-bold">
+              JMS
+            </div>
             <span className="font-bold text-xl hidden md:inline-block">Journal Manager</span>
           </Link>
         </div>
