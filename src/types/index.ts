@@ -35,6 +35,14 @@ export type SubmissionStatus =
 // Review decision
 export type ReviewDecision = 'accept' | 'minor_revisions' | 'major_revisions' | 'reject';
 
+// Resubmission details
+export interface ResubmissionDetails {
+  responseToReviewers: string;
+  changesSummary: string;
+  resubmissionDate: string;
+  previousVersion: string; // URL to previous version
+}
+
 // Article submission
 export interface Submission {
   id: string;
@@ -59,6 +67,7 @@ export interface Submission {
   category: string;
   publicationDate?: string;
   peerReviewType: PeerReviewType;
+  resubmissionDetails?: ResubmissionDetails;
 }
 
 // Review
@@ -73,11 +82,16 @@ export interface Review {
   submittedDate?: string;
   dueDate: string;
   criteria: {
-    methodology: number;
-    relevance: number;
-    clarity: number;
-    originality: number;
+    methodology?: number;
+    relevance?: number;
+    clarity?: number;
+    originality?: number;
     overall: number;
+    novelty?: number;
+    importance?: number;
+    presentation?: number;
+    techQuality?: number;
+    [key: string]: number | undefined;
   };
 }
 

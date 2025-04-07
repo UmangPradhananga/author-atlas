@@ -72,7 +72,7 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
     if (review?.criteria) {
       const scaled: Record<string, number> = {};
       (Object.keys(review.criteria)).forEach(key => {
-        const originalValue = review.criteria[key];
+        const originalValue = review.criteria[key as keyof typeof review.criteria];
         // If previous value was on a 1-5 scale, convert to 1-10 scale
         scaled[key] = originalValue <= 5 ? originalValue * 2 : originalValue;
       });
