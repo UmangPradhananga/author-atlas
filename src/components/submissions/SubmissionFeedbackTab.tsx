@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Submission, ResubmissionDetails } from "@/types";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar, FileText, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SubmissionFeedbackTabProps {
   decision?: {
@@ -35,8 +36,21 @@ const SubmissionFeedbackTab: React.FC<SubmissionFeedbackTabProps> = ({
     );
   }
   
+  const isMinorRevision = decision.comments.includes("minor revision");
+  const isMajorRevision = decision.comments.includes("major revision");
+  
+  const revisionType = isMinorRevision ? "Minor Revisions" : isMajorRevision ? "Major Revisions" : "Revisions";
+  
   return (
     <div className="space-y-6">
+      <Alert className="bg-amber-50 border-amber-200">
+        <AlertTriangle className="h-4 w-4 text-amber-500" />
+        <AlertTitle className="text-amber-700">{revisionType} Required</AlertTitle>
+        <AlertDescription className="text-amber-600">
+          Please carefully review the feedback below and submit your revised manuscript.
+        </AlertDescription>
+      </Alert>
+      
       <Card>
         <CardHeader>
           <CardTitle>Revision Required</CardTitle>

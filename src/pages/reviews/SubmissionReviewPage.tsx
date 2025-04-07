@@ -26,6 +26,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useSubmissions } from "@/context/SubmissionContext";
 
 const SubmissionReviewPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,7 @@ const SubmissionReviewPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { updateSubmission } = useSubmissions();
 
   // Form data for the review
   const [formData, setFormData] = useState<Partial<Review>>({
@@ -157,6 +159,26 @@ const SubmissionReviewPage = () => {
       );
       
       setReview(submittedReview);
+      
+      // If the decision is minor or major revisions, update the submission status
+      if (formData.decision === "minor_revisions" || formData.decision === "major_revisions") {
+        if (submission) {
+          // Prepare decision message based on revision type
+          const decisionMessage = formData.decision === "minor_revisions" 
+            ? "The reviewer has suggested minor revisions. Please submit a revised version addressing the comments."
+            : "The reviewer has requested major revisions. Please carefully address all concerns and submit a revised version.";
+          
+          // Update submission with revision_required status
+          await updateSubmission(submission.id, {
+            status: 'revision_required',
+            decision: {
+              status: 'revision',
+              comments: decisionMessage,
+              date: new Date().toISOString()
+            }
+          });
+        }
+      }
       
       toast({
         title: "Review Submitted",
@@ -438,6 +460,11 @@ const SubmissionReviewPage = () => {
                     <SelectItem value="reject">Reject</SelectItem>
                   </SelectContent>
                 </Select>
+                {(formData.decision === "minor_revisions" || formData.decision === "major_revisions") && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    This will automatically activate the resubmission portal for the author.
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">

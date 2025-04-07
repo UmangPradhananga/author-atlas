@@ -71,6 +71,10 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
   const initialCriteria = useMemo(() => {
     if (review?.criteria) {
       const scaled: Record<string, number> = {};
+      
+      // Ensure overall property is always present with a default value
+      scaled.overall = 1;
+      
       (Object.keys(review.criteria)).forEach(key => {
         const originalValue = review.criteria[key as keyof typeof review.criteria];
         // If previous value was on a 1-5 scale, convert to 1-10 scale
@@ -134,6 +138,11 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
     const reviewData = { ...formData };
     if (!includePrivateComments) {
       reviewData.privateComments = '';
+    }
+    
+    // Ensure the 'overall' property is always included in criteria
+    if (reviewData.criteria) {
+      reviewData.criteria.overall = reviewData.criteria.overall || 1;
     }
     
     onSubmit(reviewData);
@@ -293,6 +302,11 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
                   <SelectItem value="reject">Reject</SelectItem>
                 </SelectContent>
               </Select>
+              {(formData.decision === "minor_revisions" || formData.decision === "major_revisions") && (
+                <p className="text-xs text-amber-600 mt-1">
+                  This will automatically activate the resubmission portal for the author.
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">

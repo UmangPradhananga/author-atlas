@@ -7,10 +7,12 @@ import ReviewForm from "@/components/reviews/ReviewForm";
 import SubmissionDetails from "@/components/reviews/SubmissionDetails";
 import AlreadySubmittedReview from "@/components/reviews/AlreadySubmittedReview";
 import { useReviewDetails } from "@/hooks/useReviewDetails";
+import { useSubmissions } from "@/context/SubmissionContext";
 
 const ReviewDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { updateSubmission } = useSubmissions();
   const {
     submission,
     review,
@@ -27,6 +29,27 @@ const ReviewDetailsPage = () => {
   const onSubmitReview = async (reviewData: Partial<Review>) => {
     try {
       await handleSubmitReview(reviewData);
+      
+      // If the decision is minor or major revisions, update the submission status
+      if (reviewData.decision === "minor_revisions" || reviewData.decision === "major_revisions") {
+        if (submission) {
+          // Prepare decision message based on revision type
+          const decisionMessage = reviewData.decision === "minor_revisions" 
+            ? "The reviewer has suggested minor revisions. Please submit a revised version addressing the comments."
+            : "The reviewer has requested major revisions. Please carefully address all concerns and submit a revised version.";
+          
+          // Update submission with revision_required status
+          await updateSubmission(submission.id, {
+            status: 'revision_required',
+            decision: {
+              status: 'revision',
+              comments: decisionMessage,
+              date: new Date().toISOString()
+            }
+          });
+        }
+      }
+      
       navigate("/reviews");
     } catch (err) {
       // Error already handled in the hook
