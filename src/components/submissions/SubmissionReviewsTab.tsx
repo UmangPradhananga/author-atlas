@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Clock, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 interface SubmissionReviewsTabProps {
   reviews: Review[];
@@ -42,13 +43,13 @@ const SubmissionReviewsTab: React.FC<SubmissionReviewsTabProps> = ({
     let tooltipContent = '';
     switch (type) {
       case 'open':
-        tooltipContent = 'Both authors and reviewers know each others identities';
+        tooltipContent = "Both authors and reviewers know each other's identities";
         break;
       case 'single_blind':
-        tooltipContent = 'Reviewers know author identities, but authors dont know reviewers';
+        tooltipContent = "Reviewers know author identities, but authors don't know reviewers";
         break;
       case 'double_blind':
-        tooltipContent = 'Both authors and reviewers remain anonymous to each other';
+        tooltipContent = "Both authors and reviewers remain anonymous to each other";
         break;
     }
     
@@ -133,27 +134,28 @@ const SubmissionReviewsTab: React.FC<SubmissionReviewsTabProps> = ({
                 
                 <div>
                   <h3 className="font-semibold mb-2">Ratings</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Methodology</p>
-                      <p className="font-medium">{review.criteria.methodology}/5</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Relevance</p>
-                      <p className="font-medium">{review.criteria.relevance}/5</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Clarity</p>
-                      <p className="font-medium">{review.criteria.clarity}/5</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Originality</p>
-                      <p className="font-medium">{review.criteria.originality}/5</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Overall Rating</p>
-                      <p className="font-medium">{review.criteria.overall}/5</p>
-                    </div>
+                  <div className="space-y-4">
+                    {Object.entries(review.criteria).map(([key, rating]) => {
+                      // Convert old 5-scale ratings to 10-scale if needed
+                      const displayRating = rating <= 5 && key !== 'overall' ? rating * 2 : rating;
+                      const percentage = (displayRating / 10) * 100;
+                      
+                      return (
+                        <div key={key} className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium capitalize">
+                              {key === 'methodology' ? 'Research Methodology' :
+                               key === 'relevance' ? 'Relevance to Field' :
+                               key === 'clarity' ? 'Clarity & Presentation' :
+                               key === 'originality' ? 'Originality & Innovation' :
+                               'Overall Assessment'}
+                            </span>
+                            <span className="text-sm font-medium">{displayRating}/10</span>
+                          </div>
+                          <Progress value={percentage} className="h-2" />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 

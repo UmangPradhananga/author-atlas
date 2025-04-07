@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/context/AuthContext";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ReviewFormProps {
@@ -43,35 +42,54 @@ const criteriaLabels: Record<CriteriaKey, string> = {
 
 const ratingLabels = [
   "Poor", 
-  "Below Average", 
+  "Below Average",
   "Average", 
   "Good", 
-  "Very Good"
+  "Very Good",
+  "Excellent",
+  "Outstanding",
+  "Exceptional",
+  "Superior",
+  "Perfect"
 ];
 
 const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormProps) => {
   const { user } = useAuth();
   const isEditor = user?.role === 'editor' || user?.role === 'admin';
   
+  // Scale ratings from 1-5 to 1-10 for existing reviews
+  const initialCriteria = useMemo(() => {
+    if (review?.criteria) {
+      const scaled: Record<CriteriaKey, number> = {} as Record<CriteriaKey, number>;
+      (Object.keys(review.criteria) as CriteriaKey[]).forEach(key => {
+        const originalValue = review.criteria[key];
+        // If previous value was on a 1-5 scale, convert to 1-10 scale
+        scaled[key] = originalValue <= 5 ? originalValue * 2 : originalValue;
+      });
+      return scaled;
+    }
+    return {
+      methodology: 1,
+      relevance: 1,
+      clarity: 1,
+      originality: 1,
+      overall: 1,
+    };
+  }, [review]);
+  
   const [formData, setFormData] = useState<Partial<Review>>({
     decision: review?.decision || undefined,
     comments: review?.comments || '',
     privateComments: review?.privateComments || '',
-    criteria: review?.criteria || {
-      methodology: 0,
-      relevance: 0,
-      clarity: 0,
-      originality: 0,
-      overall: 0,
-    },
+    criteria: initialCriteria,
   });
 
-  const handleCriteriaChange = (criterion: CriteriaKey, value: number) => {
+  const handleCriteriaChange = (criterion: CriteriaKey, value: number[]) => {
     setFormData({
       ...formData,
       criteria: {
         ...formData.criteria!,
-        [criterion]: value
+        [criterion]: value[0]
       }
     });
   };
@@ -94,58 +112,31 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
     const criteriaKey = key as CriteriaKey;
     const value = formData.criteria![criteriaKey];
     
-    // Radio button rating system for editors
-    if (isEditor) {
-      return (
-        <div key={key} className="border rounded-md p-4">
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-base font-medium">{label}</Label>
-            <div className="text-sm text-muted-foreground">
-              {value === 0 ? 'Not Rated' : `${value}/5`}
-            </div>
-          </div>
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((ratingValue) => (
-              <div key={ratingValue} className="flex items-center space-x-3">
-                <Checkbox 
-                  id={`${key}-${ratingValue}`}
-                  checked={value === ratingValue}
-                  onCheckedChange={() => handleCriteriaChange(criteriaKey, ratingValue)}
-                />
-                <Label 
-                  htmlFor={`${key}-${ratingValue}`}
-                  className="cursor-pointer text-sm font-normal"
-                >
-                  {ratingValue} - {ratingLabels[ratingValue - 1]}
-                </Label>
-              </div>
-            ))}
+    return (
+      <div key={key} className="space-y-3 border rounded-md p-4">
+        <div className="flex justify-between items-center">
+          <Label className="text-base font-medium">{label}</Label>
+          <div className="flex items-center space-x-2">
+            <span className="text-xl font-semibold">{value}</span>
+            <span className="text-sm text-muted-foreground">/10</span>
           </div>
         </div>
-      );
-    }
-    
-    // For reviewers, use radio buttons as shown in the image
-    return (
-      <div key={key} className="space-y-3">
-        <Label>{label} {value > 0 && <span className="text-muted-foreground">({value}/5)</span>}</Label>
-        <RadioGroup 
-          value={value.toString()}
-          onValueChange={(val) => handleCriteriaChange(criteriaKey, parseInt(val))}
-          className="flex flex-col space-y-1"
-        >
-          {[1, 2, 3, 4, 5].map((val) => (
-            <div key={val} className="flex items-center space-x-2">
-              <RadioGroupItem value={val.toString()} id={`${key}-${val}`} />
-              <Label htmlFor={`${key}-${val}`} className="cursor-pointer font-normal">
-                {ratingLabels[val-1]}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+        <div className="py-2">
+          <Slider
+            defaultValue={[value]}
+            min={1}
+            max={10}
+            step={1}
+            onValueChange={(val) => handleCriteriaChange(criteriaKey, val)}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Poor</span>
+          <span>Perfect</span>
+        </div>
       </div>
     );
-  }), [formData.criteria, isEditor]);
+  }), [formData.criteria]);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -154,7 +145,7 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
           <CardHeader>
             <CardTitle>Rating Criteria</CardTitle>
             <CardDescription>
-              Rate each aspect of the manuscript on a scale of 1-5.
+              Rate each aspect of the manuscript on a scale of 1-10.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
