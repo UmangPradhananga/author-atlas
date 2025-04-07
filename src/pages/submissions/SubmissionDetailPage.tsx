@@ -228,6 +228,7 @@ const SubmissionDetailPage = () => {
             formatDate={formatDate}
             isEditor={isEditor}
             isReviewer={isReviewer}
+            peerReviewType={submission.peerReviewType || 'double_blind'}
           />
         </TabsContent>
         
