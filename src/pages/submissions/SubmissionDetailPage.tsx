@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -36,6 +37,7 @@ import SubmissionReviewsTab from "@/components/submissions/SubmissionReviewsTab"
 import SubmissionFeedbackTab from "@/components/submissions/SubmissionFeedbackTab";
 import SubmissionDecisionTab from "@/components/submissions/SubmissionDecisionTab";
 import ResubmissionPortal from "@/components/submissions/ResubmissionPortal";
+import ResubmissionDialog from "@/components/submissions/ResubmissionDialog";
 
 const SubmissionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +46,7 @@ const SubmissionDetailPage = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResubmissionPortal, setShowResubmissionPortal] = useState(false);
+  const [resubmissionDialogOpen, setResubmissionDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -99,17 +102,18 @@ const SubmissionDetailPage = () => {
     }
   };
 
-  const handleActivateResubmission = async () => {
+  const handleActivateResubmission = async (comments: string) => {
     setIsSubmitting(true);
     try {
       await updateSubmission(submission.id, { 
         status: 'revision_required',
         decision: {
           status: 'revision',
-          comments: 'The editor has requested a revision of this submission. Please use the resubmission portal to submit your revised manuscript.',
+          comments: comments || 'The editor has requested a revision of this submission. Please use the resubmission portal to submit your revised manuscript.',
           date: new Date().toISOString()
         }
       });
+      
       toast({
         title: "Resubmission Portal Activated",
         description: "The author can now submit a revised version of their manuscript.",
@@ -121,6 +125,7 @@ const SubmissionDetailPage = () => {
         description: "Failed to activate resubmission portal. Please try again.",
         variant: "destructive",
       });
+      throw error; // Re-throw to be caught by the dialog component
     } finally {
       setIsSubmitting(false);
     }
@@ -194,7 +199,11 @@ const SubmissionDetailPage = () => {
             
             {isEditor && submission.status === "under_review" && (
               <div className="flex gap-2 flex-wrap justify-end">
-                <Button variant="outline" className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200" onClick={handleActivateResubmission}>
+                <Button 
+                  variant="outline" 
+                  className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200" 
+                  onClick={() => setResubmissionDialogOpen(true)}
+                >
                   <RotateCw className="mr-2 h-4 w-4" /> Request Revisions
                 </Button>
                 <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
@@ -221,9 +230,9 @@ const SubmissionDetailPage = () => {
                 <Button 
                   variant="outline" 
                   className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-                  onClick={handleActivateResubmission}
+                  onClick={() => setResubmissionDialogOpen(true)}
                 >
-                  <LockOpen className="mr-2 h-4 w-4" /> Activate Resubmission Portal
+                  <LockOpen className="mr-2 h-4 w-4" /> Request Revision
                 </Button>
               </div>
             )}
@@ -233,7 +242,11 @@ const SubmissionDetailPage = () => {
                 <Button onClick={() => navigate(`/reviews/${submission.id}`)}>
                   <FileText className="mr-2 h-4 w-4" /> Submit Review
                 </Button>
-                <Button variant="outline" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200" onClick={handleActivateResubmission}>
+                <Button 
+                  variant="outline" 
+                  className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200" 
+                  onClick={() => setResubmissionDialogOpen(true)}
+                >
                   <LockOpen className="mr-2 h-4 w-4" /> Request Revision
                 </Button>
               </div>
@@ -289,6 +302,14 @@ const SubmissionDetailPage = () => {
               </TabsContent>
             )}
           </Tabs>
+
+          {/* Resubmission Dialog */}
+          <ResubmissionDialog
+            submission={submission}
+            open={resubmissionDialogOpen}
+            onOpenChange={setResubmissionDialogOpen}
+            onConfirm={handleActivateResubmission}
+          />
         </>
       )}
     </div>

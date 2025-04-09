@@ -30,6 +30,11 @@ const ReviewDetailsPage = () => {
 
   const onSubmitReview = async (reviewData: Partial<Review>) => {
     try {
+      // Ensure overall rating is included to fix the TS error
+      if (reviewData.criteria && !reviewData.criteria.overall) {
+        reviewData.criteria.overall = 0;
+      }
+      
       await handleSubmitReview(reviewData);
       
       // If the decision is minor or major revisions, update the submission status
