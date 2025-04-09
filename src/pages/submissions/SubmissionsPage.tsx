@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSubmissions } from "@/context/SubmissionContext";
 import { useAuth } from "@/context/AuthContext";
@@ -52,7 +51,7 @@ const SubmissionsPage = () => {
 
   // Filter and search states
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<string>("updatedAt");
+  const [sortField, setSortField] = useState<string>("updatedDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string | null>(null);
@@ -123,7 +122,7 @@ const SubmissionsPage = () => {
       }
       
       result = result.filter(submission => {
-        const submissionDate = new Date(submission.updatedAt);
+        const submissionDate = new Date(submission.updatedDate);
         return submissionDate >= filterDate;
       });
     }
@@ -137,17 +136,17 @@ const SubmissionsPage = () => {
           fieldA = a.title.toLowerCase();
           fieldB = b.title.toLowerCase();
           break;
-        case "updatedAt":
-          fieldA = new Date(a.updatedAt).getTime();
-          fieldB = new Date(b.updatedAt).getTime();
+        case "updatedDate":
+          fieldA = new Date(a.updatedDate).getTime();
+          fieldB = new Date(b.updatedDate).getTime();
           break;
-        case "createdAt":
-          fieldA = new Date(a.createdAt).getTime();
-          fieldB = new Date(b.createdAt).getTime();
+        case "submittedDate":
+          fieldA = new Date(a.submittedDate).getTime();
+          fieldB = new Date(b.submittedDate).getTime();
           break;
         default:
-          fieldA = new Date(a.updatedAt).getTime();
-          fieldB = new Date(b.updatedAt).getTime();
+          fieldA = new Date(a.updatedDate).getTime();
+          fieldB = new Date(b.updatedDate).getTime();
       }
       
       if (sortDirection === "asc") {
@@ -310,12 +309,12 @@ const SubmissionsPage = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => handleSortChange("updatedAt")}
+                  onClick={() => handleSortChange("updatedDate")}
                   className="flex items-center gap-1"
                 >
                   <Calendar className="h-4 w-4" />
                   Date Updated
-                  {sortField === "updatedAt" && (
+                  {sortField === "updatedDate" && (
                     sortDirection === "asc" 
                       ? <SortAsc className="h-3 w-3 ml-1" /> 
                       : <SortDesc className="h-3 w-3 ml-1" />
@@ -413,7 +412,7 @@ const SubmissionsPage = () => {
                         className="w-full" 
                         onClick={() => {
                           setSearchQuery("");
-                          setSortField("updatedAt");
+                          setSortField("updatedDate");
                           setSortDirection("desc");
                           setCategoryFilter(null);
                           setDateFilter(null);

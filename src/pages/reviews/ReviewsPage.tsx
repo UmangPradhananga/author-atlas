@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { submissionsApi } from "@/api/apiService";
 import { useAuth } from "@/context/AuthContext";
@@ -155,8 +154,8 @@ const ReviewsPage = () => {
         // For completed reviews, filter by completion date
         else if (activeTab === "completed") {
           const review = getReviewForSubmission(submission);
-          if (review && review.completed && review.completedAt) {
-            const completedDate = new Date(review.completedAt);
+          if (review && review.completed && review.submittedDate) {
+            const completedDate = new Date(review.submittedDate);
             return completedDate >= filterDate;
           }
           return false;
@@ -177,9 +176,9 @@ const ReviewsPage = () => {
         const reviewB = getReviewForSubmission(b);
         fieldA = reviewA ? new Date(reviewA.dueDate).getTime() : 0;
         fieldB = reviewB ? new Date(reviewB.dueDate).getTime() : 0;
-      } else if (sortField === "updatedAt") {
-        fieldA = new Date(a.updatedAt).getTime();
-        fieldB = new Date(b.updatedAt).getTime();
+      } else if (sortField === "updatedDate") {
+        fieldA = new Date(a.updatedDate).getTime();
+        fieldB = new Date(b.updatedDate).getTime();
       } else {
         // Default sort by due date
         const reviewA = getReviewForSubmission(a);
@@ -199,70 +198,57 @@ const ReviewsPage = () => {
     setCurrentPage(1); // Reset to first page when filters change
   }, [filteredSubmissions, searchQuery, sortField, sortDirection, dateFilter, activeTab]);
 
-  // Get paginated data
   const getPaginatedData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return displayedSubmissions.slice(startIndex, endIndex);
   };
 
-  // Calculate total pages
   const totalPages = Math.ceil(displayedSubmissions.length / itemsPerPage);
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxPagesToShow = 5;
     
     if (totalPages <= maxPagesToShow) {
-      // Show all pages if total pages is less than max pages to show
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
-      // Always show first page
       pageNumbers.push(1);
       
-      // Calculate start and end of middle pages
       let startPage = Math.max(2, currentPage - 1);
       let endPage = Math.min(totalPages - 1, currentPage + 1);
       
-      // Adjust if we're near the beginning or end
       if (currentPage <= 3) {
         endPage = Math.min(maxPagesToShow - 1, totalPages - 1);
       } else if (currentPage >= totalPages - 2) {
         startPage = Math.max(2, totalPages - (maxPagesToShow - 2));
       }
       
-      // Add ellipsis after first page if needed
       if (startPage > 2) {
         pageNumbers.push('ellipsis');
       }
       
-      // Add middle pages
       for (let i = startPage; i <= endPage; i++) {
         pageNumbers.push(i);
       }
       
-      // Add ellipsis before last page if needed
       if (endPage < totalPages - 1) {
         pageNumbers.push('ellipsis');
       }
       
-      // Always show last page
       pageNumbers.push(totalPages);
     }
     
     return pageNumbers;
   };
 
-  // If not a reviewer or editor, redirect to dashboard
   if (user && user.role !== "reviewer" && user.role !== "editor" && user.role !== "admin") {
     navigate("/dashboard");
     return null;
   }
 
-  // Toggle sort direction or change sort field
   const handleSortChange = (field: string) => {
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
@@ -272,7 +258,6 @@ const ReviewsPage = () => {
     }
   };
 
-  // Get corresponding review for a submission for the current reviewer
   const getReviewForSubmission = (submission: Submission) => {
     if (!user || !submission.reviews) return undefined;
     return submission.reviews.find(review => review.reviewerId === user.id);
@@ -570,7 +555,6 @@ const ReviewsPage = () => {
                     {getPaginatedData().map(renderSubmissionCard)}
                   </div>
                   
-                  {/* Pagination component */}
                   {totalPages > 1 && (
                     <div className="mt-6">
                       <Pagination>
