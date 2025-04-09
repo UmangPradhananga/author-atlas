@@ -76,6 +76,16 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     onSubmit(reviewData);
   };
 
+  // Fix: Create a handler function that correctly handles the type conversion
+  const handleDecisionChange = (value: string) => {
+    // Cast the string value to ReviewDecision type if it's a valid decision
+    if (value === "accept" || value === "minor_revisions" || value === "major_revisions" || value === "reject") {
+      setDecision(value as ReviewDecision);
+    } else {
+      setDecision(""); // Handle empty selection
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       {error && (
@@ -226,7 +236,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           <CardContent>
             <Select
               value={decision}
-              onValueChange={setDecision}
+              onValueChange={handleDecisionChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select your recommendation" />
