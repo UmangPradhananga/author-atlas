@@ -518,7 +518,7 @@ const SubmissionsPage = () => {
         )}
       </div>
 
-      {loading ? (
+      {false ? (
         <div className="flex justify-center items-center h-64">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
