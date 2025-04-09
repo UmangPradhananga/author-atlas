@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -50,7 +49,6 @@ const SubmissionDetailPage = () => {
 
   const submission = id ? getSubmissionById(id) : undefined;
   
-  // Early return for missing submission
   if (!submission) {
     return (
       <div className="text-center py-12">
@@ -65,10 +63,10 @@ const SubmissionDetailPage = () => {
     );
   }
 
-  // Compute role-based permissions
   const isAuthor = user?.id === submission.correspondingAuthor;
   const isEditor = user?.role === "editor" || user?.role === "admin";
   const isReviewer = user?.role === "reviewer" && submission.reviewers?.includes(user.id);
+  const isAdmin = user?.role === "admin";
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -161,7 +159,6 @@ const SubmissionDetailPage = () => {
               </p>
             </div>
 
-            {/* Author actions */}
             {isAuthor && submission.status === "draft" && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => navigate(`/submissions/${submission.id}/edit`)}>
@@ -174,7 +171,6 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {/* Revision actions */}
             {isAuthor && submission.status === "revision_required" && (
               <div className="flex gap-2">
                 <Button onClick={handleToggleResubmissionPortal}>
@@ -183,7 +179,6 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {/* Editor actions - submitted status */}
             {isEditor && submission.status === "submitted" && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => {
@@ -197,11 +192,10 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {/* Editor actions - under review */}
             {isEditor && submission.status === "under_review" && (
-              <div className="flex gap-2">
-                <Button variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" onClick={handleActivateResubmission}>
-                  <Edit className="mr-2 h-4 w-4" /> Request Revisions
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Button variant="outline" className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200" onClick={handleActivateResubmission}>
+                  <RotateCw className="mr-2 h-4 w-4" /> Request Revisions
                 </Button>
                 <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
                   toast({
@@ -222,13 +216,23 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {/* Reviewer actions */}
+            {isAdmin && submission.status === "under_review" && (
+              <div className="flex gap-2 mt-2 md:mt-0">
+                <Button 
+                  variant="outline" 
+                  className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                  onClick={handleActivateResubmission}
+                >
+                  <LockOpen className="mr-2 h-4 w-4" /> Activate Resubmission Portal
+                </Button>
+              </div>
+            )}
+            
             {isReviewer && submission.status === "under_review" && (
               <div className="flex gap-2">
                 <Button onClick={() => navigate(`/reviews/${submission.id}`)}>
                   <FileText className="mr-2 h-4 w-4" /> Submit Review
                 </Button>
-                {/* New: Reviewer can activate resubmission portal */}
                 <Button variant="outline" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200" onClick={handleActivateResubmission}>
                   <LockOpen className="mr-2 h-4 w-4" /> Request Revision
                 </Button>

@@ -73,7 +73,7 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
       const scaled: Record<string, number> = {};
       
       // Ensure overall property is always present with a default value
-      scaled.overall = 1;
+      scaled.overall = review.criteria.overall || 1;
       
       (Object.keys(review.criteria)).forEach(key => {
         const originalValue = review.criteria[key as keyof typeof review.criteria];
@@ -117,7 +117,9 @@ const ReviewForm = ({ submission, review, onSubmit, isSubmitting }: ReviewFormPr
       ...formData,
       criteria: {
         ...formData.criteria!,
-        [criterion]: value[0]
+        [criterion]: value[0],
+        // Always ensure the overall property is included
+        overall: criterion === 'overall' ? value[0] : (formData.criteria?.overall || 1)
       }
     });
   };

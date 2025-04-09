@@ -8,11 +8,13 @@ import SubmissionDetails from "@/components/reviews/SubmissionDetails";
 import AlreadySubmittedReview from "@/components/reviews/AlreadySubmittedReview";
 import { useReviewDetails } from "@/hooks/useReviewDetails";
 import { useSubmissions } from "@/context/SubmissionContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const ReviewDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { updateSubmission } = useSubmissions();
+  const { toast } = useToast();
   const {
     submission,
     review,
@@ -47,12 +49,18 @@ const ReviewDetailsPage = () => {
               date: new Date().toISOString()
             }
           });
+
+          toast({
+            title: "Resubmission Portal Activated",
+            description: "The author can now submit a revised version of their manuscript.",
+          });
         }
       }
       
       navigate("/reviews");
     } catch (err) {
       // Error already handled in the hook
+      console.error("Error submitting review:", err);
     }
   };
 
