@@ -28,7 +28,6 @@ import {
   AlertTriangle,
   ChevronLeft,
   RotateCw,
-  LockOpen,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SubmissionStatusBadge from "@/components/submissions/SubmissionStatusBadge";
@@ -199,13 +198,6 @@ const SubmissionDetailPage = () => {
             
             {isEditor && submission.status === "under_review" && (
               <div className="flex gap-2 flex-wrap justify-end">
-                <Button 
-                  variant="outline" 
-                  className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200" 
-                  onClick={() => setResubmissionDialogOpen(true)}
-                >
-                  <RotateCw className="mr-2 h-4 w-4" /> Request Revisions
-                </Button>
                 <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
                   toast({
                     title: "Accept Submission",
@@ -225,29 +217,10 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {isAdmin && submission.status === "under_review" && (
-              <div className="flex gap-2 mt-2 md:mt-0">
-                <Button 
-                  variant="outline" 
-                  className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-                  onClick={() => setResubmissionDialogOpen(true)}
-                >
-                  <LockOpen className="mr-2 h-4 w-4" /> Request Revision
-                </Button>
-              </div>
-            )}
-            
             {isReviewer && submission.status === "under_review" && (
               <div className="flex gap-2">
                 <Button onClick={() => navigate(`/reviews/${submission.id}`)}>
                   <FileText className="mr-2 h-4 w-4" /> Submit Review
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200" 
-                  onClick={() => setResubmissionDialogOpen(true)}
-                >
-                  <LockOpen className="mr-2 h-4 w-4" /> Request Revision
                 </Button>
               </div>
             )}
@@ -292,7 +265,11 @@ const SubmissionDetailPage = () => {
             
             {submission.status === "revision_required" && (
               <TabsContent value="feedback" className="mt-6">
-                <SubmissionFeedbackTab decision={submission.decision} formatDate={formatDate} />
+                <SubmissionFeedbackTab 
+                  decision={submission.decision} 
+                  formatDate={formatDate}
+                  resubmissionDetails={submission.resubmissionDetails}
+                />
               </TabsContent>
             )}
             
@@ -302,14 +279,6 @@ const SubmissionDetailPage = () => {
               </TabsContent>
             )}
           </Tabs>
-
-          {/* Resubmission Dialog */}
-          <ResubmissionDialog
-            submission={submission}
-            open={resubmissionDialogOpen}
-            onOpenChange={setResubmissionDialogOpen}
-            onConfirm={handleActivateResubmission}
-          />
         </>
       )}
     </div>

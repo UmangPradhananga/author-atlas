@@ -36,8 +36,8 @@ const SubmissionFeedbackTab: React.FC<SubmissionFeedbackTabProps> = ({
     );
   }
   
-  const isMinorRevision = decision.comments.includes("minor revision");
-  const isMajorRevision = decision.comments.includes("major revision");
+  const isMinorRevision = decision.comments.toLowerCase().includes("minor revision");
+  const isMajorRevision = decision.comments.toLowerCase().includes("major revision");
   
   const revisionType = isMinorRevision ? "Minor Revisions" : isMajorRevision ? "Major Revisions" : "Revisions";
   

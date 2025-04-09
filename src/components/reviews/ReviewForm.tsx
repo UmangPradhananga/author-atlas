@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Submission, Review } from "@/types";
+import { Submission, Review, ReviewDecision } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -37,7 +38,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 }) => {
   const [comments, setComments] = useState(review?.comments || "");
   const [privateComments, setPrivateComments] = useState(review?.privateComments || "");
-  const [decision, setDecision] = useState(review?.decision || "");
+  const [decision, setDecision] = useState<ReviewDecision | "">(review?.decision || "");
   const [methodology, setMethodology] = useState(review?.criteria?.methodology || 0);
   const [relevance, setRelevance] = useState(review?.criteria?.relevance || 0);
   const [clarity, setClarity] = useState(review?.criteria?.clarity || 0);
