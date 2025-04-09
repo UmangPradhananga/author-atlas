@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -40,20 +39,35 @@ import { Label } from "@/components/ui/label";
 import { User, Role } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { usersApi } from "@/api/apiService";
-import { Pencil, Trash2, UserPlus, Filter } from "lucide-react";
+import { Pencil, Trash2, UserPlus, Filter, Search } from "lucide-react";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const UsersPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filteredRole, setFilteredRole] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   
-  // Form states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +75,6 @@ const UsersPage = () => {
   const [affiliation, setAffiliation] = useState("");
 
   useEffect(() => {
-    // Redirect if not admin
     if (user && user.role !== "admin") {
       navigate("/");
       return;
@@ -88,10 +101,56 @@ const UsersPage = () => {
     }
   }, [user, navigate, toast]);
 
-  const getFilteredUsers = () => {
-    if (!filteredRole) return users;
-    return users.filter(user => user.role === filteredRole);
-  };
+  useEffect(() => {
+    let result = [...users];
+    
+    if (filteredRole) {
+      result = result.filter(user => user.role === filteredRole);
+    }
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(user => 
+        user.name.toLowerCase().includes(query) || 
+        user.email.toLowerCase().includes(query) ||
+        (user.affiliation && user.affiliation.toLowerCase().includes(query))
+      );
+    }
+    
+    result.sort((a, b) => {
+      let fieldA, fieldB;
+      
+      switch (sortField) {
+        case "name":
+          fieldA = a.name.toLowerCase();
+          fieldB = b.name.toLowerCase();
+          break;
+        case "email":
+          fieldA = a.email.toLowerCase();
+          fieldB = b.email.toLowerCase();
+          break;
+        case "role":
+          fieldA = a.role;
+          fieldB = b.role;
+          break;
+        case "affiliation":
+          fieldA = (a.affiliation || "").toLowerCase();
+          fieldB = (b.affiliation || "").toLowerCase();
+          break;
+        default:
+          fieldA = a.name.toLowerCase();
+          fieldB = b.name.toLowerCase();
+      }
+      
+      if (sortDirection === "asc") {
+        return fieldA < fieldB ? -1 : fieldA > fieldB ? 1 : 0;
+      } else {
+        return fieldA > fieldB ? -1 : fieldA < fieldB ? 1 : 0;
+      }
+    });
+    
+    setFilteredUsers(result);
+  }, [users, filteredRole, searchQuery, sortField, sortDirection]);
 
   const handleCreateUser = async () => {
     try {
@@ -200,6 +259,61 @@ const UsersPage = () => {
       default:
         return "bg-slate-500";
     }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getPaginatedData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredUsers.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+      
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (currentPage <= 3) {
+        endPage = Math.min(maxPagesToShow - 1, totalPages - 1);
+      } else if (currentPage >= totalPages - 2) {
+        startPage = Math.max(2, totalPages - (maxPagesToShow - 2));
+      }
+      
+      if (startPage > 2) {
+        pageNumbers.push('ellipsis');
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+      
+      if (endPage < totalPages - 1) {
+        pageNumbers.push('ellipsis');
+      }
+      
+      pageNumbers.push(totalPages);
+    }
+    
+    return pageNumbers;
   };
 
   if (isLoading) {
@@ -404,27 +518,71 @@ const UsersPage = () => {
             <div>
               <CardTitle>Users</CardTitle>
               <CardDescription>
-                Total users: {users.length}
+                Total users: {filteredUsers.length}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select 
-                value={filteredRole || "all"} 
-                onValueChange={(value) => setFilteredRole(value === "all" ? null : value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="editor">Editor</SelectItem>
-                  <SelectItem value="reviewer">Reviewer</SelectItem>
-                  <SelectItem value="author">Author</SelectItem>
-                  <SelectItem value="reader">Reader</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Filter Options</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor="role-filter">Role</Label>
+                      <Select 
+                        value={filteredRole || "all"} 
+                        onValueChange={(value) => setFilteredRole(value === "all" ? null : value)}
+                      >
+                        <SelectTrigger id="role-filter">
+                          <SelectValue placeholder="Filter by role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Roles</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="editor">Editor</SelectItem>
+                          <SelectItem value="reviewer">Reviewer</SelectItem>
+                          <SelectItem value="author">Author</SelectItem>
+                          <SelectItem value="reader">Reader</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="items-per-page">Items per page</Label>
+                      <Select 
+                        value={itemsPerPage.toString()} 
+                        onValueChange={(value) => {
+                          setItemsPerPage(parseInt(value));
+                          setCurrentPage(1);
+                        }}
+                      >
+                        <SelectTrigger id="items-per-page">
+                          <SelectValue placeholder="Items per page" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>
@@ -432,15 +590,23 @@ const UsersPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Affiliation</TableHead>
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                  Name {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("email")} className="cursor-pointer">
+                  Email {sortField === "email" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("role")} className="cursor-pointer">
+                  Role {sortField === "role" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("affiliation")} className="cursor-pointer">
+                  Affiliation {sortField === "affiliation" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {getFilteredUsers().map((userItem) => (
+              {getPaginatedData().map((userItem) => (
                 <TableRow key={userItem.id}>
                   <TableCell className="font-medium">{userItem.name}</TableCell>
                   <TableCell>{userItem.email}</TableCell>
@@ -471,7 +637,7 @@ const UsersPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {getFilteredUsers().length === 0 && (
+              {getPaginatedData().length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     No users found
@@ -480,6 +646,44 @@ const UsersPage = () => {
               )}
             </TableBody>
           </Table>
+          
+          {filteredUsers.length > 0 && (
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {getPageNumbers().map((pageNum, index) => (
+                    <PaginationItem key={index}>
+                      {pageNum === 'ellipsis' ? (
+                        <span className="flex h-9 w-9 items-center justify-center">...</span>
+                      ) : (
+                        <PaginationLink
+                          isActive={currentPage === pageNum}
+                          onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
