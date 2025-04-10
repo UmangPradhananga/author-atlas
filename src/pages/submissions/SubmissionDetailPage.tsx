@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   RotateCw,
+  UserCheck,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SubmissionStatusBadge from "@/components/submissions/SubmissionStatusBadge";
@@ -37,6 +38,7 @@ import SubmissionFeedbackTab from "@/components/submissions/SubmissionFeedbackTa
 import SubmissionDecisionTab from "@/components/submissions/SubmissionDecisionTab";
 import ResubmissionPortal from "@/components/submissions/ResubmissionPortal";
 import ResubmissionDialog from "@/components/submissions/ResubmissionDialog";
+import ReviewerAssignmentDialog from "@/components/submissions/ReviewerAssignmentDialog";
 
 const SubmissionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +48,7 @@ const SubmissionDetailPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResubmissionPortal, setShowResubmissionPortal] = useState(false);
   const [resubmissionDialogOpen, setResubmissionDialogOpen] = useState(false);
+  const [reviewerAssignmentOpen, setReviewerAssignmentOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -134,6 +137,58 @@ const SubmissionDetailPage = () => {
     setShowResubmissionPortal(!showResubmissionPortal);
   };
 
+  const handleAssignReviewers = async (reviewerIds: string[]) => {
+    setIsSubmitting(true);
+    try {
+      // Update submission status and assign reviewers
+      await updateSubmission(submission.id, {
+        status: 'under_review',
+        reviewers: reviewerIds,
+        // Set review deadlines for each reviewer
+        reviews: reviewerIds.map(reviewerId => {
+          // Check if reviewer already exists to avoid duplicates
+          const existingReview = submission.reviews?.find(r => r.reviewerId === reviewerId);
+          if (existingReview) return existingReview;
+          
+          // Create a new review with a deadline 14 days from now
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14);
+          
+          return {
+            id: `rev-${Math.random().toString(36).substring(2, 9)}`,
+            submissionId: submission.id,
+            reviewerId: reviewerId,
+            completed: false,
+            comments: '',
+            dueDate: dueDate.toISOString(),
+            criteria: {
+              methodology: 0,
+              relevance: 0,
+              clarity: 0,
+              originality: 0,
+              overall: 0
+            }
+          };
+        })
+      });
+      
+      toast({
+        title: "Reviewers Assigned",
+        description: "Reviewers have been successfully assigned to this submission.",
+      });
+    } catch (error) {
+      console.error("Error assigning reviewers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign reviewers. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {showResubmissionPortal && submission.status === 'revision_required' && isAuthor ? (
@@ -185,35 +240,38 @@ const SubmissionDetailPage = () => {
             
             {isEditor && submission.status === "submitted" && (
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => {
-                  toast({
-                    title: "Assign Reviewers",
-                    description: "This would open a dialog to assign reviewers in a real application.",
-                  });
-                }}>
-                  <Users className="mr-2 h-4 w-4" /> Assign Reviewers
+                <Button onClick={() => setReviewerAssignmentOpen(true)}>
+                  <UserCheck className="mr-2 h-4 w-4" /> Assign Reviewers
                 </Button>
               </div>
             )}
             
             {isEditor && submission.status === "under_review" && (
-              <div className="flex gap-2 flex-wrap justify-end">
-                <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
-                  toast({
-                    title: "Accept Submission",
-                    description: "This would accept the submission in a real application.",
-                  });
-                }}>
-                  <ThumbsUp className="mr-2 h-4 w-4" /> Accept
+              <div className="flex flex-wrap items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setReviewerAssignmentOpen(true)}
+                >
+                  <UserCheck className="mr-2 h-4 w-4" /> Manage Reviewers
                 </Button>
-                <Button variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" onClick={() => {
-                  toast({
-                    title: "Reject Submission",
-                    description: "This would reject the submission in a real application.",
-                  });
-                }}>
-                  <ThumbsDown className="mr-2 h-4 w-4" /> Reject
-                </Button>
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
+                    toast({
+                      title: "Accept Submission",
+                      description: "This would accept the submission in a real application.",
+                    });
+                  }}>
+                    <ThumbsUp className="mr-2 h-4 w-4" /> Accept
+                  </Button>
+                  <Button variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" onClick={() => {
+                    toast({
+                      title: "Reject Submission",
+                      description: "This would reject the submission in a real application.",
+                    });
+                  }}>
+                    <ThumbsDown className="mr-2 h-4 w-4" /> Reject
+                  </Button>
+                </div>
               </div>
             )}
             
@@ -279,6 +337,16 @@ const SubmissionDetailPage = () => {
               </TabsContent>
             )}
           </Tabs>
+          
+          {/* Add the ReviewerAssignmentDialog */}
+          {isEditor && (
+            <ReviewerAssignmentDialog
+              open={reviewerAssignmentOpen}
+              onClose={() => setReviewerAssignmentOpen(false)}
+              submission={submission}
+              onAssignReviewers={handleAssignReviewers}
+            />
+          )}
         </>
       )}
     </div>
