@@ -1,3 +1,4 @@
+
 import { User, Submission, Review, DashboardStats, Role, PeerReviewType } from '../types';
 import { users, submissions, dashboardStats } from './mockData';
 
@@ -307,42 +308,3 @@ export const articlesApi = {
     );
   }
 };
-
-// Update users array to include copyeditor and publisher
-const users: User[] = [
-  {
-    id: 'user-1',
-    name: 'Author John',
-    email: 'author@journal.com',
-    role: 'author',
-    avatar: undefined,
-  },
-  {
-    id: 'user-2',
-    name: 'Author Jane',
-    email: 'author2@journal.com',
-    role: 'author',
-    avatar: undefined,
-  },
-  {
-    id: 'user-3',
-    name: 'Author Bob',
-    email: 'author3@journal.com',
-    role: 'author',
-    avatar: undefined,
-  },
-  {
-    id: 'copyeditor-1',
-    name: 'Copy Editor Jane',
-    email: 'copyeditor@journal.com',
-    role: 'copyeditor',
-    avatar: undefined,
-  },
-  {
-    id: 'publisher-1',
-    name: 'Publisher John',
-    email: 'publisher@journal.com',
-    role: 'publisher',
-    avatar: undefined,
-  }
-];
