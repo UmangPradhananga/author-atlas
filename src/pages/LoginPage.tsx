@@ -86,6 +86,8 @@ const LoginPage = () => {
                   <li>reviewer@journal.com (Reviewer)</li>
                   <li>author@journal.com (Author)</li>
                   <li>reader@journal.com (Reader)</li>
+                  <li>copyeditor@journal.com (Copy Editor)</li>
+                  <li>publisher@journal.com (Publisher)</li>
                 </ul>
                 <p className="mt-1">Any password will work in this demo.</p>
               </div>

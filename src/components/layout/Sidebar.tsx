@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -9,7 +8,9 @@ import {
   Users, 
   Settings,
   ChevronRight,
-  Plus
+  Plus,
+  Edit,
+  Printer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -130,6 +131,26 @@ const Sidebar = () => {
             icon={Settings} 
             title={isExpanded ? "Settings" : ""} 
             isActive={isActive('/settings')}
+          />
+        )}
+        
+        {/* Copy Editing - Copy Editors */}
+        {(role === 'copyeditor' || role === 'admin' || role === 'editor') && (
+          <SidebarLink 
+            href="/copy-editing" 
+            icon={Edit} 
+            title={isExpanded ? "Copy Editing" : ""} 
+            isActive={isActive('/copy-editing')}
+          />
+        )}
+        
+        {/* Publishing - Publishers */}
+        {(role === 'publisher' || role === 'admin' || role === 'editor') && (
+          <SidebarLink 
+            href="/publishing" 
+            icon={Printer} 
+            title={isExpanded ? "Publishing" : ""} 
+            isActive={isActive('/publishing')}
           />
         )}
       </div>
