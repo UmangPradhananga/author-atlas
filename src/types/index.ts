@@ -1,4 +1,3 @@
-
 // User roles
 export type Role = 'admin' | 'editor' | 'reviewer' | 'author' | 'reader';
 
@@ -68,6 +67,8 @@ export interface Submission {
   publicationDate?: string;
   peerReviewType: PeerReviewType;
   resubmissionDetails?: ResubmissionDetails;
+  copyeditors?: string[];
+  publishers?: string[];
 }
 
 // Review

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +28,8 @@ import {
   ChevronLeft,
   RotateCw,
   UserCheck,
+  Pen,
+  Briefcase,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SubmissionStatusBadge from "@/components/submissions/SubmissionStatusBadge";
@@ -38,7 +39,7 @@ import SubmissionFeedbackTab from "@/components/submissions/SubmissionFeedbackTa
 import SubmissionDecisionTab from "@/components/submissions/SubmissionDecisionTab";
 import ResubmissionPortal from "@/components/submissions/ResubmissionPortal";
 import ResubmissionDialog from "@/components/submissions/ResubmissionDialog";
-import ReviewerAssignmentDialog from "@/components/submissions/ReviewerAssignmentDialog";
+import AssignmentDialog from "@/components/submissions/AssignmentDialog";
 
 const SubmissionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +50,8 @@ const SubmissionDetailPage = () => {
   const [showResubmissionPortal, setShowResubmissionPortal] = useState(false);
   const [resubmissionDialogOpen, setResubmissionDialogOpen] = useState(false);
   const [reviewerAssignmentOpen, setReviewerAssignmentOpen] = useState(false);
+  const [copyeditorAssignmentOpen, setCopyeditorAssignmentOpen] = useState(false);
+  const [publisherAssignmentOpen, setPublisherAssignmentOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -137,53 +140,102 @@ const SubmissionDetailPage = () => {
     setShowResubmissionPortal(!showResubmissionPortal);
   };
 
-  const handleAssignReviewers = async (reviewerIds: string[]) => {
+  const handleAssignUsers = async (userIds: string[], role: string) => {
+    if (!submission) return;
+    
     setIsSubmitting(true);
     try {
-      // Update submission status and assign reviewers
-      await updateSubmission(submission.id, {
-        status: 'under_review',
-        reviewers: reviewerIds,
-        // Set review deadlines for each reviewer
-        reviews: reviewerIds.map(reviewerId => {
-          // Check if reviewer already exists to avoid duplicates
-          const existingReview = submission.reviews?.find(r => r.reviewerId === reviewerId);
-          if (existingReview) return existingReview;
-          
-          // Create a new review with a deadline 14 days from now
-          const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + 14);
-          
-          return {
-            id: `rev-${Math.random().toString(36).substring(2, 9)}`,
-            submissionId: submission.id,
-            reviewerId: reviewerId,
-            completed: false,
-            comments: '',
-            dueDate: dueDate.toISOString(),
-            criteria: {
-              methodology: 0,
-              relevance: 0,
-              clarity: 0,
-              originality: 0,
-              overall: 0
-            }
+      let updates: Partial<Submission> = {};
+      
+      switch (role) {
+        case 'reviewer':
+          updates = {
+            status: 'under_review',
+            reviewers: userIds,
+            reviews: userIds.map(reviewerId => {
+              const existingReview = submission.reviews?.find(r => r.reviewerId === reviewerId);
+              if (existingReview) return existingReview;
+              
+              const dueDate = new Date();
+              dueDate.setDate(dueDate.getDate() + 14);
+              
+              return {
+                id: `rev-${Math.random().toString(36).substring(2, 9)}`,
+                submissionId: submission.id,
+                reviewerId: reviewerId,
+                completed: false,
+                comments: '',
+                dueDate: dueDate.toISOString(),
+                criteria: {
+                  methodology: 0,
+                  relevance: 0,
+                  clarity: 0,
+                  originality: 0,
+                  overall: 0
+                }
+              };
+            })
           };
-        })
-      });
+          break;
+        case 'copyeditor':
+          updates = {
+            copyeditors: userIds
+          };
+          break;
+        case 'publisher':
+          updates = {
+            publishers: userIds
+          };
+          break;
+      }
+      
+      await updateSubmission(submission.id, updates);
       
       toast({
-        title: "Reviewers Assigned",
-        description: "Reviewers have been successfully assigned to this submission.",
+        title: "Assignment Updated",
+        description: `Successfully assigned ${role}s to this submission.`,
       });
     } catch (error) {
-      console.error("Error assigning reviewers:", error);
+      console.error(`Error assigning ${role}s:`, error);
       toast({
         title: "Error",
-        description: "Failed to assign reviewers. Please try again.",
+        description: `Failed to assign ${role}s. Please try again.`,
         variant: "destructive",
       });
-      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeskDecision = async (decision: 'accept' | 'reject' | 'review') => {
+    if (!submission) return;
+    
+    setIsSubmitting(true);
+    try {
+      const updates: Partial<Submission> = {
+        status: decision === 'accept' ? 'accepted' : 
+               decision === 'reject' ? 'rejected' : 
+               'submitted',
+        decision: decision === 'review' ? undefined : {
+          status: decision,
+          comments: `Desk ${decision} by editor`,
+          date: new Date().toISOString()
+        }
+      };
+      
+      await updateSubmission(submission.id, updates);
+      
+      toast({
+        title: "Decision Made",
+        description: `Submission has been ${decision === 'review' ? 'sent for review' : decision + 'ed'}.`,
+      });
+    } catch (error) {
+      console.error("Error making desk decision:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process the decision. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -239,10 +291,40 @@ const SubmissionDetailPage = () => {
             )}
             
             {isEditor && submission.status === "submitted" && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={() => setReviewerAssignmentOpen(true)}>
                   <UserCheck className="mr-2 h-4 w-4" /> Assign Reviewers
                 </Button>
+                <Button onClick={() => setCopyeditorAssignmentOpen(true)}>
+                  <Pen className="mr-2 h-4 w-4" /> Assign Copyeditors
+                </Button>
+                <Button onClick={() => setPublisherAssignmentOpen(true)}>
+                  <Briefcase className="mr-2 h-4 w-4" /> Assign Publishers
+                </Button>
+                <div className="flex gap-2 flex-wrap justify-end">
+                  <Button 
+                    variant="outline" 
+                    className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
+                    onClick={() => handleDeskDecision('accept')}
+                    disabled={isSubmitting}
+                  >
+                    <ThumbsUp className="mr-2 h-4 w-4" /> Desk Accept
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                    onClick={() => handleDeskDecision('reject')}
+                    disabled={isSubmitting}
+                  >
+                    <ThumbsDown className="mr-2 h-4 w-4" /> Desk Reject
+                  </Button>
+                  <Button
+                    onClick={() => handleDeskDecision('review')}
+                    disabled={isSubmitting}
+                  >
+                    <Send className="mr-2 h-4 w-4" /> Send for Review
+                  </Button>
+                </div>
               </div>
             )}
             
@@ -340,12 +422,32 @@ const SubmissionDetailPage = () => {
           
           {/* Add the ReviewerAssignmentDialog */}
           {isEditor && (
-            <ReviewerAssignmentDialog
-              open={reviewerAssignmentOpen}
-              onClose={() => setReviewerAssignmentOpen(false)}
-              submission={submission}
-              onAssignReviewers={handleAssignReviewers}
-            />
+            <>
+              <AssignmentDialog
+                open={reviewerAssignmentOpen}
+                onClose={() => setReviewerAssignmentOpen(false)}
+                submission={submission}
+                onAssign={(userIds) => handleAssignUsers(userIds, 'reviewer')}
+                role="reviewer"
+                currentAssignees={submission.reviewers}
+              />
+              <AssignmentDialog
+                open={copyeditorAssignmentOpen}
+                onClose={() => setCopyeditorAssignmentOpen(false)}
+                submission={submission}
+                onAssign={(userIds) => handleAssignUsers(userIds, 'copyeditor')}
+                role="copyeditor"
+                currentAssignees={submission.copyeditors}
+              />
+              <AssignmentDialog
+                open={publisherAssignmentOpen}
+                onClose={() => setPublisherAssignmentOpen(false)}
+                submission={submission}
+                onAssign={(userIds) => handleAssignUsers(userIds, 'publisher')}
+                role="publisher"
+                currentAssignees={submission.publishers}
+              />
+            </>
           )}
         </>
       )}
