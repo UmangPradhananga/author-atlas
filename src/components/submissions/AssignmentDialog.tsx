@@ -60,6 +60,13 @@ const AssignmentDialog = ({
     }
   }, [open, role, toast]);
 
+  useEffect(() => {
+    // Update selected users when currentAssignees changes
+    if (currentAssignees) {
+      setSelectedUserIds(currentAssignees);
+    }
+  }, [currentAssignees]);
+
   const handleSelectUser = (userId: string) => {
     setSelectedUserIds((prev) => {
       if (prev.includes(userId)) {

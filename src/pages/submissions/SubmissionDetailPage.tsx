@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useSubmissions } from "@/context/SubmissionContext";
-import { Submission, Review } from "@/types"; // Add the missing import here
+import { Submission, Review } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -132,7 +131,7 @@ const SubmissionDetailPage = () => {
         description: "Failed to activate resubmission portal. Please try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw to be caught by the dialog component
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -245,7 +244,7 @@ const SubmissionDetailPage = () => {
 
   return (
     <div className="space-y-6">
-      {showResubmissionPortal && submission.status === 'revision_required' && isAuthor ? (
+      {showResubmissionPortal && submission?.status === 'revision_required' && isAuthor ? (
         <ResubmissionPortal 
           submission={submission} 
           onClose={handleToggleResubmissionPortal} 
@@ -264,15 +263,15 @@ const SubmissionDetailPage = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="line-clamp-2">{submission.title}</h1>
-                <SubmissionStatusBadge status={submission.status} />
+                <h1 className="line-clamp-2">{submission?.title}</h1>
+                <SubmissionStatusBadge status={submission?.status || 'draft'} />
               </div>
               <p className="text-muted-foreground">
-                Submitted on {formatDate(submission.submittedDate)}
+                Submitted on {formatDate(submission?.submittedDate)}
               </p>
             </div>
 
-            {isAuthor && submission.status === "draft" && (
+            {isAuthor && submission?.status === "draft" && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => navigate(`/submissions/${submission.id}/edit`)}>
                   <Edit className="mr-2 h-4 w-4" /> Edit
@@ -284,7 +283,7 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {isAuthor && submission.status === "revision_required" && (
+            {isAuthor && submission?.status === "revision_required" && (
               <div className="flex gap-2">
                 <Button onClick={handleToggleResubmissionPortal}>
                   <RotateCw className="mr-2 h-4 w-4" /> Submit Revision
@@ -292,7 +291,7 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {isEditor && submission.status === "submitted" && (
+            {isEditor && submission?.status === "submitted" && (
               <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={() => setReviewerAssignmentOpen(true)}>
                   <UserCheck className="mr-2 h-4 w-4" /> Assign Reviewers
@@ -330,7 +329,7 @@ const SubmissionDetailPage = () => {
               </div>
             )}
             
-            {isEditor && submission.status === "under_review" && (
+            {isEditor && submission?.status === "under_review" && (
               <div className="flex flex-wrap items-center gap-2">
                 <Button 
                   variant="outline" 
@@ -338,28 +337,22 @@ const SubmissionDetailPage = () => {
                 >
                   <UserCheck className="mr-2 h-4 w-4" /> Manage Reviewers
                 </Button>
-                <div className="flex gap-2 flex-wrap justify-end">
-                  <Button variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200" onClick={() => {
-                    toast({
-                      title: "Accept Submission",
-                      description: "This would accept the submission in a real application.",
-                    });
-                  }}>
-                    <ThumbsUp className="mr-2 h-4 w-4" /> Accept
-                  </Button>
-                  <Button variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200" onClick={() => {
-                    toast({
-                      title: "Reject Submission",
-                      description: "This would reject the submission in a real application.",
-                    });
-                  }}>
-                    <ThumbsDown className="mr-2 h-4 w-4" /> Reject
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setCopyeditorAssignmentOpen(true)}
+                >
+                  <Pen className="mr-2 h-4 w-4" /> Manage Copyeditors
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPublisherAssignmentOpen(true)}
+                >
+                  <Briefcase className="mr-2 h-4 w-4" /> Manage Publishers
+                </Button>
               </div>
             )}
             
-            {isReviewer && submission.status === "under_review" && (
+            {isReviewer && submission?.status === "under_review" && (
               <div className="flex gap-2">
                 <Button onClick={() => navigate(`/reviews/${submission.id}`)}>
                   <FileText className="mr-2 h-4 w-4" /> Submit Review
@@ -368,7 +361,7 @@ const SubmissionDetailPage = () => {
             )}
           </div>
 
-          {submission.status === "revision_required" && (
+          {submission?.status === "revision_required" && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Revision Required</AlertTitle>
@@ -382,7 +375,7 @@ const SubmissionDetailPage = () => {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              {submission.status === "revision_required" && (
+              {submission?.status === "revision_required" && (
                 <TabsTrigger value="feedback">Editor Feedback</TabsTrigger>
               )}
               {submission.decision && (
@@ -405,7 +398,7 @@ const SubmissionDetailPage = () => {
               />
             </TabsContent>
             
-            {submission.status === "revision_required" && (
+            {submission?.status === "revision_required" && (
               <TabsContent value="feedback" className="mt-6">
                 <SubmissionFeedbackTab 
                   decision={submission.decision} 
@@ -422,8 +415,7 @@ const SubmissionDetailPage = () => {
             )}
           </Tabs>
           
-          {/* Add the ReviewerAssignmentDialog */}
-          {isEditor && (
+          {isEditor && submission && (
             <>
               <AssignmentDialog
                 open={reviewerAssignmentOpen}

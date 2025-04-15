@@ -62,5 +62,32 @@ export const reviewsApi = {
       console.error("Error getting reviews by peer review type:", error);
       throw error;
     }
+  },
+  
+  // New helper method for editors to get submissions with copyeditor or publisher assignments
+  getEditorAssignedSubmissions: async (role: 'copyeditor' | 'publisher' | 'reviewer'): Promise<Submission[]> => {
+    try {
+      const allSubmissions = await submissionsApi.getAllSubmissions();
+      
+      switch (role) {
+        case 'copyeditor':
+          return allSubmissions.filter(sub => 
+            sub.copyeditors && sub.copyeditors.length > 0
+          );
+        case 'publisher':
+          return allSubmissions.filter(sub => 
+            sub.publishers && sub.publishers.length > 0
+          );
+        case 'reviewer':
+          return allSubmissions.filter(sub => 
+            sub.reviewers && sub.reviewers.length > 0
+          );
+        default:
+          return [];
+      }
+    } catch (error) {
+      console.error(`Error getting submissions with ${role} assignments:`, error);
+      throw error;
+    }
   }
 };
