@@ -296,10 +296,10 @@ const SubmissionDetailPage = () => {
                 <Button onClick={() => setReviewerAssignmentOpen(true)}>
                   <UserCheck className="mr-2 h-4 w-4" /> Assign Reviewers
                 </Button>
-                <Button onClick={() => setCopyeditorAssignmentOpen(true)}>
+                <Button onClick={() => navigate(`/submissions/${submission.id}/copyeditors`)}>
                   <Pen className="mr-2 h-4 w-4" /> Assign Copyeditors
                 </Button>
-                <Button onClick={() => setPublisherAssignmentOpen(true)}>
+                <Button onClick={() => navigate(`/submissions/${submission.id}/publishers`)}>
                   <Briefcase className="mr-2 h-4 w-4" /> Assign Publishers
                 </Button>
                 <div className="flex gap-2 flex-wrap justify-end">

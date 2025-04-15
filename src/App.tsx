@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,8 @@ import ReviewsPage from "./pages/reviews/ReviewsPage";
 import ReviewDetailsPage from "./pages/reviews/ReviewDetailsPage";
 import UsersPage from "./pages/admin/UsersPage";
 import NotFound from "./pages/NotFound";
+import CopyeditorAssignmentPage from "./pages/submissions/CopyeditorAssignmentPage";
+import PublisherAssignmentPage from "./pages/submissions/PublisherAssignmentPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,8 @@ const App = () => (
                 <Route path="/submissions" element={<SubmissionsPage />} />
                 <Route path="/submissions/new" element={<NewSubmissionPage />} />
                 <Route path="/submissions/:id" element={<SubmissionDetailPage />} />
+                <Route path="/submissions/:id/copyeditors" element={<CopyeditorAssignmentPage />} />
+                <Route path="/submissions/:id/publishers" element={<PublisherAssignmentPage />} />
                 
                 <Route path="/reviews" element={<ReviewsPage />} />
                 <Route path="/reviews/:id" element={<ReviewDetailsPage />} />
