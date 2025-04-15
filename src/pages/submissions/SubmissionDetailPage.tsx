@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useSubmissions } from "@/context/SubmissionContext";
+import { Submission, Review } from "@/types"; // Add the missing import here
 import { Button } from "@/components/ui/button";
 import {
   Card,
