@@ -1,4 +1,3 @@
-
 import { User, Submission, Review, DashboardStats } from '../types';
 
 // Mock Users
@@ -47,6 +46,24 @@ export const users: User[] = [
     avatar: 'https://ui-avatars.com/api/?name=Reader+Brown&background=f59e0b&color=fff',
     affiliation: 'Graduate Student',
     bio: 'Interested in latest research in technology'
+  },
+  {
+    id: 'user-6',
+    name: 'Copy Editor Jane',
+    email: 'copyeditor@journal.com',
+    role: 'copyeditor',
+    avatar: 'https://ui-avatars.com/api/?name=Copy+Editor+Jane&background=ec4899&color=fff',
+    affiliation: 'Editorial Services Inc.',
+    bio: 'Professional copy editor with expertise in academic publications'
+  },
+  {
+    id: 'user-7',
+    name: 'Publisher John',
+    email: 'publisher@journal.com',
+    role: 'publisher',
+    avatar: 'https://ui-avatars.com/api/?name=Publisher+John&background=8b5cf6&color=fff',
+    affiliation: 'Academic Publishing House',
+    bio: 'Publishing professional specializing in scientific journals'
   },
 ];
 

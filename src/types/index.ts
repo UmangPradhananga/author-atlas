@@ -1,5 +1,6 @@
+
 // User roles
-export type Role = 'admin' | 'editor' | 'reviewer' | 'author' | 'reader';
+export type Role = 'admin' | 'editor' | 'reviewer' | 'author' | 'reader' | 'copyeditor' | 'publisher';
 
 // Peer review types
 export type PeerReviewType = 'open' | 'single_blind' | 'double_blind';
