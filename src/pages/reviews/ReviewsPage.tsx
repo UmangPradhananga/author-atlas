@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Clock, User, Info, Search, Filter, SortAsc, SortDesc, Calendar } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, User, Info, Search, Filter, SortAsc, SortDesc, Calendar, Send, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,9 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { useSubmissions } from "@/context/SubmissionContext";
+import { useToast } from "@/components/ui/use-toast";
+import ReviewerAssignmentDialog from "@/components/submissions/ReviewerAssignmentDialog";
 
 const ReviewsPage = () => {
   const { user } = useAuth();
@@ -43,6 +46,10 @@ const ReviewsPage = () => {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+
+  const [isAssigningReviewers, setIsAssigningReviewers] = useState(false);
+  const { updateSubmission } = useSubmissions();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchReviewSubmissions = async () => {
@@ -311,10 +318,120 @@ const ReviewsPage = () => {
     );
   };
 
+  const handleDeskDecision = async (submission: Submission, decision: 'accept' | 'reject' | 'review') => {
+    try {
+      if (decision === 'review') {
+        setIsAssigningReviewers(true);
+        return;
+      }
+
+      await updateSubmission(submission.id, {
+        status: decision === 'accept' ? 'accepted' : 'rejected',
+        decision: {
+          status: decision,
+          comments: `Desk ${decision} by editor`,
+          date: new Date().toISOString()
+        }
+      });
+
+      toast({
+        title: "Decision Made",
+        description: `Submission has been ${decision}ed.`,
+      });
+
+      // Refresh the page to update the list
+      window.location.reload();
+    } catch (error) {
+      console.error("Error making desk decision:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process the decision. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAssignReviewers = async (userIds: string[]) => {
+    if (!submissions) return;
+    
+    try {
+      await updateSubmission(submissions.id, {
+        status: 'under_review',
+        reviewers: userIds,
+        reviews: userIds.map(reviewerId => {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14);
+          
+          return {
+            id: `rev-${Math.random().toString(36).substring(2, 9)}`,
+            submissionId: submissions.id,
+            reviewerId: reviewerId,
+            completed: false,
+            comments: '',
+            dueDate: dueDate.toISOString(),
+            criteria: {
+              methodology: 0,
+              relevance: 0,
+              clarity: 0,
+              originality: 0,
+              overall: 0
+            }
+          };
+        })
+      });
+
+      toast({
+        title: "Reviewers Assigned",
+        description: "Successfully assigned reviewers and moved submission to review.",
+      });
+
+      setIsAssigningReviewers(false);
+      // Refresh the page to update the list
+      window.location.reload();
+    } catch (error) {
+      console.error("Error assigning reviewers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign reviewers. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Modify the renderSubmissionCard function to include desk decision buttons
   const renderSubmissionCard = (submission: Submission) => {
     const review = getReviewForSubmission(submission);
     const isDueSoon = review && !review.completed && new Date(review.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const isOverdue = review && !review.completed && new Date(review.dueDate) < new Date();
+
+    const renderDeskDecisionButtons = () => {
+      if (activeTab !== 'assignable' || submission.status !== 'submitted') return null;
+
+      return (
+        <div className="flex gap-2 mt-4">
+          <Button 
+            variant="outline" 
+            className="flex-1 bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
+            onClick={() => handleDeskDecision(submission, 'accept')}
+          >
+            <ThumbsUp className="h-4 w-4 mr-2" /> Desk Accept
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+            onClick={() => handleDeskDecision(submission, 'reject')}
+          >
+            <ThumbsDown className="h-4 w-4 mr-2" /> Desk Reject
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => handleDeskDecision(submission, 'review')}
+          >
+            <Send className="h-4 w-4 mr-2" /> Submit for Review
+          </Button>
+        </div>
+      );
+    };
 
     return (
       <Card key={submission.id} className="hover:shadow-md transition-shadow">
@@ -366,6 +483,7 @@ const ReviewsPage = () => {
               </div>
             )}
           </div>
+          {renderDeskDecisionButtons()}
         </CardContent>
         <CardFooter>
           <Button 
@@ -615,7 +733,16 @@ const ReviewsPage = () => {
               )}
             </TabsContent>
           </Tabs>
-        </>
+
+      {isAssigningReviewers && (
+        <ReviewerAssignmentDialog 
+          open={isAssigningReviewers}
+          onClose={() => setIsAssigningReviewers(false)}
+          submission={submissions}
+          onAssignReviewers={handleAssignReviewers}
+        />
+      )}
+    </>
       )}
     </div>
   );
