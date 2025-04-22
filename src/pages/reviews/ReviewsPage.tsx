@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Clock, User, Info, Search, Filter, SortAsc, SortDesc, Calendar, Send, ThumbsUp, ThumbsDown } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, User, Info, Search, Filter, SortAsc, SortDesc, Calendar } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,17 +14,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useSubmissions } from "@/context/SubmissionContext";
 import { useToast } from "@/components/ui/use-toast";
 import ReviewerAssignmentDialog from "@/components/submissions/ReviewerAssignmentDialog";
+import DeskDecisionButtons from "@/components/reviews/DeskDecisionButtons";
 
 const ReviewsPage = () => {
   const { user } = useAuth();
@@ -50,6 +44,7 @@ const ReviewsPage = () => {
   const [isAssigningReviewers, setIsAssigningReviewers] = useState(false);
   const { updateSubmission } = useSubmissions();
   const { toast } = useToast();
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
   useEffect(() => {
     const fetchReviewSubmissions = async () => {
@@ -322,6 +317,7 @@ const ReviewsPage = () => {
     try {
       if (decision === 'review') {
         setIsAssigningReviewers(true);
+        setSelectedSubmission(submission);
         return;
       }
 
@@ -339,8 +335,9 @@ const ReviewsPage = () => {
         description: `Submission has been ${decision}ed.`,
       });
 
-      // Refresh the page to update the list
-      window.location.reload();
+      // Refresh submissions
+      const updatedSubmissions = await submissionsApi.getAllSubmissions();
+      setSubmissions(updatedSubmissions);
     } catch (error) {
       console.error("Error making desk decision:", error);
       toast({
@@ -352,10 +349,10 @@ const ReviewsPage = () => {
   };
 
   const handleAssignReviewers = async (userIds: string[]) => {
-    if (!submissions) return;
+    if (!selectedSubmission) return;
     
     try {
-      await updateSubmission(submissions.id, {
+      await updateSubmission(selectedSubmission.id, {
         status: 'under_review',
         reviewers: userIds,
         reviews: userIds.map(reviewerId => {
@@ -364,7 +361,7 @@ const ReviewsPage = () => {
           
           return {
             id: `rev-${Math.random().toString(36).substring(2, 9)}`,
-            submissionId: submissions.id,
+            submissionId: selectedSubmission.id,
             reviewerId: reviewerId,
             completed: false,
             comments: '',
@@ -386,8 +383,9 @@ const ReviewsPage = () => {
       });
 
       setIsAssigningReviewers(false);
-      // Refresh the page to update the list
-      window.location.reload();
+      // Refresh submissions
+      const updatedSubmissions = await submissionsApi.getAllSubmissions();
+      setSubmissions(updatedSubmissions);
     } catch (error) {
       console.error("Error assigning reviewers:", error);
       toast({
@@ -398,40 +396,12 @@ const ReviewsPage = () => {
     }
   };
 
-  // Modify the renderSubmissionCard function to include desk decision buttons
+  // Modify the renderSubmissionCard function
   const renderSubmissionCard = (submission: Submission) => {
     const review = getReviewForSubmission(submission);
     const isDueSoon = review && !review.completed && new Date(review.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const isOverdue = review && !review.completed && new Date(review.dueDate) < new Date();
-
-    const renderDeskDecisionButtons = () => {
-      if (activeTab !== 'assignable' || submission.status !== 'submitted') return null;
-
-      return (
-        <div className="flex gap-2 mt-4">
-          <Button 
-            variant="outline" 
-            className="flex-1 bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
-            onClick={() => handleDeskDecision(submission, 'accept')}
-          >
-            <ThumbsUp className="h-4 w-4 mr-2" /> Desk Accept
-          </Button>
-          <Button 
-            variant="outline"
-            className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
-            onClick={() => handleDeskDecision(submission, 'reject')}
-          >
-            <ThumbsDown className="h-4 w-4 mr-2" /> Desk Reject
-          </Button>
-          <Button
-            className="flex-1"
-            onClick={() => handleDeskDecision(submission, 'review')}
-          >
-            <Send className="h-4 w-4 mr-2" /> Submit for Review
-          </Button>
-        </div>
-      );
-    };
+    const showDeskDecisions = activeTab === 'assignable' && submission.status === 'submitted';
 
     return (
       <Card key={submission.id} className="hover:shadow-md transition-shadow">
@@ -483,7 +453,12 @@ const ReviewsPage = () => {
               </div>
             )}
           </div>
-          {renderDeskDecisionButtons()}
+          {showDeskDecisions && (
+            <DeskDecisionButtons 
+              submission={submission}
+              onDeskDecision={(decision) => handleDeskDecision(submission, decision)}
+            />
+          )}
         </CardContent>
         <CardFooter>
           <Button 
@@ -734,11 +709,11 @@ const ReviewsPage = () => {
             </TabsContent>
           </Tabs>
 
-      {isAssigningReviewers && (
+      {isAssigningReviewers && selectedSubmission && (
         <ReviewerAssignmentDialog 
           open={isAssigningReviewers}
           onClose={() => setIsAssigningReviewers(false)}
-          submission={submissions}
+          submission={selectedSubmission}
           onAssignReviewers={handleAssignReviewers}
         />
       )}
