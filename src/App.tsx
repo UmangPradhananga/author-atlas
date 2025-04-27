@@ -21,6 +21,7 @@ import NewSubmissionPage from "./pages/submissions/NewSubmissionPage";
 import ReviewsPage from "./pages/reviews/ReviewsPage";
 import ReviewDetailsPage from "./pages/reviews/ReviewDetailsPage";
 import UsersPage from "./pages/admin/UsersPage";
+import CreateUserPage from "./pages/admin/CreateUserPage";
 import NotFound from "./pages/NotFound";
 import CopyeditorAssignmentPage from "./pages/submissions/CopyeditorAssignmentPage";
 import PublisherAssignmentPage from "./pages/submissions/PublisherAssignmentPage";
@@ -56,6 +57,8 @@ const App = () => (
                 <Route path="/reviews/:id" element={<ReviewDetailsPage />} />
                 
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/admin/create-user" element={<CreateUserPage />} />
+                <Route path="/admin/users" element={<UsersPage />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>

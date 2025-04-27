@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Submission, Review, ReviewDecision } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -71,6 +70,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         originality,
         overall,
       },
+      // Adding metadata to indicate this review requests a revision if applicable
+      requestsRevision: decision === "minor_revisions" || decision === "major_revisions",
+      revisionType: decision === "minor_revisions" || decision === "major_revisions" ? decision : undefined
     };
 
     onSubmit(reviewData);

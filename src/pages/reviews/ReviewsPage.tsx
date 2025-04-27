@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { submissionsApi } from "@/api/apiService";
+import { editorApi, submissionsApi } from "@/api/apiService";
 import { useAuth } from "@/context/AuthContext";
-import { Submission, PeerReviewType } from "@/types";
+import { Submission, PeerReviewType, EditorDecision, ReviewType } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { useSubmissions } from "@/context/SubmissionContext";
 import { useToast } from "@/components/ui/use-toast";
 import ReviewerAssignmentDialog from "@/components/submissions/ReviewerAssignmentDialog";
 import DeskDecisionButtons from "@/components/reviews/DeskDecisionButtons";
+import { AssignReviewerRequest } from "@/types/editor";
 
 const ReviewsPage = () => {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ const ReviewsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
   const [isAssigningReviewers, setIsAssigningReviewers] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const { updateSubmission } = useSubmissions();
   const { toast } = useToast();
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
@@ -52,12 +54,12 @@ const ReviewsPage = () => {
 
       try {
         // For reviewer role
-        if (user.role === "reviewer") {
-          const reviewerSubmissions = await submissionsApi.getReviewerSubmissions(user.id);
+        if (user.role === "Reviewer") {
+          const reviewerSubmissions = await submissionsApi.getReviewerSubmissions(user.userId);
           setSubmissions(reviewerSubmissions);
         } 
         // For editor or admin roles
-        else if (user.role === "editor" || user.role === "admin") {
+        else if (user.role === "Editor" || user.role === "Admin") {
           const allSubmissions = await submissionsApi.getAllSubmissions();
           // Only get the under_review submissions
           const reviewSubmissions = allSubmissions.filter(
@@ -105,7 +107,7 @@ const ReviewsPage = () => {
     } else if (activeTab === "assignable") {
       result = result.filter(submission => 
         submission.status === "submitted" && 
-        (user?.role === "editor" || user?.role === "admin")
+        (user?.role === "Editor" || user?.role === "Admin")
       );
     }
     
@@ -246,7 +248,7 @@ const ReviewsPage = () => {
     return pageNumbers;
   };
 
-  if (user && user.role !== "reviewer" && user.role !== "editor" && user.role !== "admin") {
+  if (user && user.role !== "Reviewer" && user.role !== "Editor" && user.role !== "Admin") {
     navigate("/dashboard");
     return null;
   }
@@ -262,7 +264,7 @@ const ReviewsPage = () => {
 
   const getReviewForSubmission = (submission: Submission) => {
     if (!user || !submission.reviews) return undefined;
-    return submission.reviews.find(review => review.reviewerId === user.id);
+    return submission.reviews.find(review => review.reviewerId === user.userId);
   };
 
   const formatDate = (dateString: string) => {
@@ -330,14 +332,21 @@ const ReviewsPage = () => {
         }
       });
 
+  const handleDeskDecision = async (assignReviewer: AssignReviewerRequest) => {
+    try {
+      // Call an appropriate API method based on the decision
+      await editorApi.assignReviewer(assignReviewer);
       toast({
         title: "Decision Made",
-        description: `Submission has been ${decision}ed.`,
+        description: `Submission has been ${assignReviewer.status}ed.`,
       });
 
       // Refresh submissions
       const updatedSubmissions = await submissionsApi.getAllSubmissions();
       setSubmissions(updatedSubmissions);
+      
+      // Refresh the page to update the list
+      window.location.reload();
     } catch (error) {
       console.error("Error making desk decision:", error);
       toast({
@@ -350,6 +359,8 @@ const ReviewsPage = () => {
 
   const handleAssignReviewers = async (userIds: string[]) => {
     if (!selectedSubmission) return;
+  const handleAssignReviewers = async (assignReviewer: AssignReviewerRequest) => {
+    if (!submissions) return;
     
     try {
       await updateSubmission(selectedSubmission.id, {
@@ -376,6 +387,19 @@ const ReviewsPage = () => {
           };
         })
       });
+      const response = await editorApi.assignReviewer(assignReviewer);
+      if (response.isSuccess) {
+        toast({
+          title: "Reviewers Assigned",
+          description: "Successfully assigned reviewers.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to assign reviewers. Please try again.",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Reviewers Assigned",
@@ -397,11 +421,30 @@ const ReviewsPage = () => {
   };
 
   // Modify the renderSubmissionCard function
+  // Modify the renderSubmissionCard function to include assign reviewer button
   const renderSubmissionCard = (submission: Submission) => {
     const review = getReviewForSubmission(submission);
     const isDueSoon = review && !review.completed && new Date(review.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const isOverdue = review && !review.completed && new Date(review.dueDate) < new Date();
     const showDeskDecisions = activeTab === 'assignable' && submission.status === 'submitted';
+
+    const renderDeskDecisionButtons = () => {
+      if (activeTab !== 'assignable' || submission.status !== 'submitted') return null;
+
+      return (
+        <div className="mt-4">
+          <Button
+            className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+            onClick={() => {
+              setSelectedSubmission(submission);
+              setIsAssigningReviewers(true);
+            }}
+          >
+            <Send className="h-4 w-4 mr-2" /> Assign Reviewers
+          </Button>
+        </div>
+      );
+    };
 
     return (
       <Card key={submission.id} className="hover:shadow-md transition-shadow">
@@ -479,7 +522,7 @@ const ReviewsPage = () => {
       <div>
         <h1 className="text-2xl font-bold mb-2">Review Management</h1>
         <p className="text-muted-foreground">
-          {user?.role === "reviewer" 
+          {user?.role === "Reviewer" 
             ? "Manage your assigned manuscript reviews" 
             : "Manage review process for submitted manuscripts"}
         </p>
@@ -634,7 +677,7 @@ const ReviewsPage = () => {
               <TabsTrigger value="completed">
                 Completed Reviews
               </TabsTrigger>
-              {(user?.role === "editor" || user?.role === "admin") && (
+              {(user?.role === "Editor" || user?.role === "Admin") && (
                 <TabsTrigger value="assignable">
                   To Be Assigned
                 </TabsTrigger>
@@ -718,6 +761,25 @@ const ReviewsPage = () => {
         />
       )}
     </>
+          {isAssigningReviewers && selectedSubmission && (
+            <ReviewerAssignmentDialog 
+              open={isAssigningReviewers}
+              onClose={() => setIsAssigningReviewers(false)}
+              submission={selectedSubmission}
+              onAssignReviewers={(reviewerIds) => {
+                // Create AssignReviewerRequest from reviewerIds
+                const request: AssignReviewerRequest = {
+                  journalId: selectedSubmission.id,
+                  reviewerIds: reviewerIds,
+                  reviewType: Number(ReviewType.DoubleBinded), // Convert enum to number explicitly
+                  status: Number(EditorDecision.SubmitForReview), // Convert enum to number explicitly
+                  editorComment: "Reviewers assigned by editor"
+                };
+                return handleAssignReviewers(request);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

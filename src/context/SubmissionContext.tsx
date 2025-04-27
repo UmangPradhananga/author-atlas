@@ -1,18 +1,20 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Submission } from '../types';
 import { submissionsApi } from '../api/apiService';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Response,GenericResponse } from '@/types/api';
+import { CreateJournalRequest, UpdateJournalRequest } from '@/types/journal';
+import { AssignReviewerRequest } from '@/types/editor';
 
 interface SubmissionContextType {
   submissions: Submission[];
   userSubmissions: Submission[];
   loading: boolean;
   error: string | null;
-  createSubmission: (submission: Partial<Submission>) => Promise<Submission>;
-  updateSubmission: (id: string, updates: Partial<Submission>) => Promise<Submission>;
-  submitForReview: (id: string) => Promise<Submission>;
+  createSubmission: (submission: Partial<CreateJournalRequest>) => Promise<Response>;
+  updateSubmission: (updates: Partial<UpdateJournalRequest>) => Promise<Response>;
+  submitForReview: (assignReviewer: AssignReviewerRequest) => Promise<Response>;
   getSubmissionById: (id: string) => Submission | undefined;
   fetchSubmissions: () => Promise<void>;
 }
@@ -28,12 +30,12 @@ export const SubmissionProvider = ({ children }: { children: ReactNode }) => {
 
   // Filtered submissions based on user role
   const userSubmissions = user ? submissions.filter(submission => {
-    if (user.role === 'admin' || user.role === 'editor') {
+    if (user.role === 'Admin' || user.role === 'Editor') {
       return true; // Admins and editors see all submissions
-    } else if (user.role === 'reviewer') {
-      return submission.reviewers?.includes(user.id);
-    } else if (user.role === 'author') {
-      return submission.correspondingAuthor === user.id;
+    } else if (user.role === 'Reviewer') {
+      return submission.reviewers?.includes(user.userId);
+    } else if (user.role === 'Author') {
+      return submission.correspondingAuthor === user.userId;
     } else {
       return submission.status === 'published'; // Readers only see published
     }
@@ -53,17 +55,17 @@ export const SubmissionProvider = ({ children }: { children: ReactNode }) => {
       let fetchedSubmissions: Submission[];
       
       switch (user.role) {
-        case 'admin':
-        case 'editor':
+        case 'Admin':
+        case 'Editor':
           fetchedSubmissions = await submissionsApi.getAllSubmissions();
           break;
-        case 'reviewer':
-          fetchedSubmissions = await submissionsApi.getReviewerSubmissions(user.id);
+        case 'Reviewer':
+          fetchedSubmissions = await submissionsApi.getReviewerSubmissions(user.userId);
           break;
-        case 'author':
-          fetchedSubmissions = await submissionsApi.getSubmissionsByAuthor(user.id);
+        case 'Author':
+          fetchedSubmissions = await submissionsApi.getSubmissionsByAuthor();
           break;
-        case 'reader':
+        case 'Reader':
           fetchedSubmissions = await submissionsApi.getSubmissionsByStatus('published');
           break;
         default:
@@ -88,16 +90,17 @@ export const SubmissionProvider = ({ children }: { children: ReactNode }) => {
     return submissions.find(sub => sub.id === id);
   };
 
-  const createSubmission = async (submission: Partial<Submission>) => {
+  const createSubmission = async (submission: Partial<CreateJournalRequest>) => {
     try {
       if (!user) throw new Error('User must be logged in to create a submission');
       
       const newSubmission = await submissionsApi.createSubmission({
-        ...submission,
-        correspondingAuthor: user.id,
+        ...submission
       });
-      
-      setSubmissions(prevSubmissions => [...prevSubmissions, newSubmission]);
+      if(!newSubmission.isSuccess)
+      {
+        throw new Error(newSubmission.error.errorMessage);
+      }
       
       toast({
         title: 'Submission created',
@@ -116,15 +119,14 @@ export const SubmissionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateSubmission = async (id: string, updates: Partial<Submission>) => {
+  const updateSubmission = async ( updates: Partial<UpdateJournalRequest>): Promise<Response> => {  
     try {
-      const updatedSubmission = await submissionsApi.updateSubmission(id, updates);
+      const updatedSubmission = await submissionsApi.updateSubmission(updates);
       
-      setSubmissions(prevSubmissions => 
-        prevSubmissions.map(sub => 
-          sub.id === id ? { ...sub, ...updates, updatedDate: new Date().toISOString() } : sub
-        )
-      );
+      if(!updatedSubmission.isSuccess)
+      {
+        throw new Error(updatedSubmission.error.errorMessage);
+      }
       
       toast({
         title: 'Submission updated',
@@ -143,16 +145,20 @@ export const SubmissionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const submitForReview = async (id: string) => {
+  const submitForReview = async (assignReviewer: AssignReviewerRequest): Promise<Response> => {
     try {
-      const updatedSubmission = await submissionsApi.submitForReview(id);
+      const updatedSubmission = await submissionsApi.submitForReview(assignReviewer);
       
       setSubmissions(prevSubmissions => 
         prevSubmissions.map(sub => 
-          sub.id === id ? { ...sub, status: 'submitted', updatedDate: new Date().toISOString() } : sub
+          sub.id === assignReviewer.journalId ? { ...sub, status: 'submitted', updatedDate: new Date().toISOString() } : sub
         )
       );
-      
+      if(!updatedSubmission.isSuccess)
+      {
+        throw new Error(updatedSubmission.error.errorMessage);
+      }
+      var response = updatedSubmission as Response;
       toast({
         title: 'Submission sent for review',
         description: 'Your submission has been successfully sent for review.',

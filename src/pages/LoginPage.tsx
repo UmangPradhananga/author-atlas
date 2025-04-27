@@ -1,4 +1,3 @@
-
 import { useState, FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -14,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -27,10 +27,25 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // Login using the service layer
       await login(email, password);
+      
+      // Display success message
+      toast({
+        title: "Login successful",
+        description: "Welcome back to Journal Manager",
+      });
+      
       navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
+      
+      // Display error toast
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

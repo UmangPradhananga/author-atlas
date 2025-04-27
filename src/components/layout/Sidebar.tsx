@@ -63,7 +63,7 @@ const Sidebar = () => {
     >
       <div className="flex-1 p-4 space-y-2">
         {/* Dashboard - all users except readers */}
-        {role !== 'reader' && (
+        {role !== 'Reader' && (
           <SidebarLink 
             href="/dashboard" 
             icon={LayoutDashboard} 
@@ -73,7 +73,7 @@ const Sidebar = () => {
         )}
         
         {/* Submissions - Authors */}
-        {(role === 'author' || role === 'admin' || role === 'editor') && (
+        {(role === 'Author' || role === 'Admin' || role === 'Editor') && (
           <div className="space-y-1">
             <SidebarLink 
               href="/submissions" 
@@ -81,7 +81,7 @@ const Sidebar = () => {
               title={isExpanded ? "My Submissions" : ""} 
               isActive={isActive('/submissions')}
             />
-            {role === 'author' && (
+            {role === 'Author' && (
               <button
                 onClick={() => navigate('/submissions/new')}
                 className={cn(
@@ -97,7 +97,7 @@ const Sidebar = () => {
         )}
         
         {/* Reviews - Reviewers */}
-        {(role === 'reviewer' || role === 'admin' || role === 'editor') && (
+        {(role === 'Reviewer' || role === 'Admin' || role === 'Editor') && (
           <SidebarLink 
             href="/reviews" 
             icon={ClipboardCheck} 
@@ -115,7 +115,7 @@ const Sidebar = () => {
         />
         
         {/* Users - Admin only */}
-        {role === 'admin' && (
+        {role === 'Admin' && (
           <SidebarLink 
             href="/users" 
             icon={Users} 
@@ -125,7 +125,7 @@ const Sidebar = () => {
         )}
         
         {/* Settings - Admin and Editors */}
-        {(role === 'admin' || role === 'editor') && (
+        {(role === 'Admin' || role === 'Editor') && (
           <SidebarLink 
             href="/settings" 
             icon={Settings} 
@@ -135,7 +135,7 @@ const Sidebar = () => {
         )}
         
         {/* Copy Editing - Copy Editors */}
-        {(role === 'copyeditor' || role === 'admin' || role === 'editor') && (
+        {(role === 'Copyeditor' || role === 'Admin' || role === 'Editor') && (
           <SidebarLink 
             href="/copy-editing" 
             icon={Edit} 
@@ -145,7 +145,7 @@ const Sidebar = () => {
         )}
         
         {/* Publishing - Publishers */}
-        {(role === 'publisher' || role === 'admin' || role === 'editor') && (
+        {(role === 'Publisher' || role === 'Admin' || role === 'Editor') && (
           <SidebarLink 
             href="/publishing" 
             icon={Printer} 

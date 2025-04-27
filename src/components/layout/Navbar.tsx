@@ -94,11 +94,11 @@ const Navbar = () => {
           
           {user && (
             <>
-              {user.role !== 'reader' && (
+              {user.role !== 'Reader' && (
                 <NavLink to="/dashboard" label="Dashboard" icon={LayoutDashboard} />
               )}
               
-              {(user.role === 'author' || user.role === 'admin' || user.role === 'editor') && (
+              {(user.role === 'Author' || user.role === 'Admin' || user.role === 'Editor') && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className={cn(
@@ -113,7 +113,7 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate('/submissions')}>
                       View Submissions
                     </DropdownMenuItem>
-                    {user.role === 'author' && (
+                    {user.role === 'Author' && (
                       <DropdownMenuItem onClick={() => navigate('/submissions/new')}>
                         <Plus className="h-4 w-4 mr-2" />
                         New Submission
@@ -123,15 +123,15 @@ const Navbar = () => {
                 </DropdownMenu>
               )}
               
-              {(user.role === 'reviewer' || user.role === 'admin' || user.role === 'editor') && (
+              {(user.role === 'Reviewer' || user.role === 'Admin' || user.role === 'Editor') && (
                 <NavLink to="/reviews" label="Reviews" icon={ClipboardCheck} />
               )}
               
-              {user.role === 'admin' && (
+              {user.role === 'Admin' && (
                 <NavLink to="/users" label="Users" icon={Users} />
               )}
               
-              {(user.role === 'admin' || user.role === 'editor') && (
+              {(user.role === 'Admin' || user.role === 'Editor') && (
                 <NavLink to="/settings" label="Settings" icon={Settings} />
               )}
             </>
@@ -145,15 +145,15 @@ const Navbar = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    <AvatarImage src={user.fullName} alt={user.fullName} />
+                    <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-sm font-medium leading-none">{user.fullName}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     <p className="text-xs leading-none text-muted-foreground capitalize">{user.role}</p>
                   </div>
@@ -197,7 +197,7 @@ const Navbar = () => {
               
               {user && (
                 <>
-                  {user.role !== 'reader' && (
+                  {user.role !== 'Reader' && (
                     <Link
                       to="/dashboard"
                       className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
@@ -208,7 +208,7 @@ const Navbar = () => {
                     </Link>
                   )}
                   
-                  {(user.role === 'author' || user.role === 'admin' || user.role === 'editor') && (
+                  {(user.role === 'Author' || user.role === 'Admin' || user.role === 'Editor') && (
                     <>
                       <Link
                         to="/submissions"
@@ -218,7 +218,7 @@ const Navbar = () => {
                         <FileText className="h-5 w-5" />
                         My Submissions
                       </Link>
-                      {user.role === 'author' && (
+                      {user.role === 'Author' && (
                         <Button 
                           variant="outline" 
                           className="flex items-center justify-start gap-1"
@@ -234,7 +234,7 @@ const Navbar = () => {
                     </>
                   )}
                   
-                  {(user.role === 'reviewer' || user.role === 'admin' || user.role === 'editor') && (
+                  {(user.role === 'Reviewer' || user.role === 'Admin' || user.role === 'Editor') && (
                     <Link
                       to="/reviews"
                       className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
@@ -245,7 +245,7 @@ const Navbar = () => {
                     </Link>
                   )}
                   
-                  {user.role === 'admin' && (
+                  {user.role === 'Admin' && (
                     <Link
                       to="/users"
                       className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
@@ -256,7 +256,7 @@ const Navbar = () => {
                     </Link>
                   )}
                   
-                  {(user.role === 'admin' || user.role === 'editor') && (
+                  {(user.role === 'Admin' || user.role === 'Editor') && (
                     <Link
                       to="/settings"
                       className="flex items-center gap-1 py-2 text-base font-medium hover:text-primary"
@@ -273,11 +273,11 @@ const Navbar = () => {
                 <div className="py-2 border-t border-border">
                   <div className="flex items-center pb-2">
                     <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                      <AvatarImage src={user.fullName} alt={user.fullName} />
+                      <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-sm font-medium">{user.fullName}</p>
                       <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                     </div>
                   </div>

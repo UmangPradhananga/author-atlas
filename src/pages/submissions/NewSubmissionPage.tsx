@@ -19,7 +19,7 @@ const NewSubmissionPage = () => {
 
   // Redirect if not an author
   useEffect(() => {
-    if (user && user.role !== 'author') {
+    if (user && user.role !== 'Author') {
       navigate('/dashboard');
     }
   }, [user, navigate]);

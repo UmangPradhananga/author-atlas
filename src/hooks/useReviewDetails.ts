@@ -33,7 +33,7 @@ export function useReviewDetails(submissionId: string | undefined) {
         // Find the current user's review for this submission if it exists
         if (foundSubmission.reviews) {
           const userReview = foundSubmission.reviews.find(
-            r => r.reviewerId === user.id
+            r => r.reviewerId === user.userId
           );
           setReview(userReview || null);
         }
@@ -59,7 +59,7 @@ export function useReviewDetails(submissionId: string | undefined) {
         ...(review || {}), // Use existing review data if available
         ...reviewData,
         submissionId: submission.id,
-        reviewerId: user.id,
+        reviewerId: user.userId,
         completed: true,
         submittedDate: new Date().toISOString(),
       };
@@ -97,11 +97,11 @@ export function useReviewDetails(submissionId: string | undefined) {
     if (!user || !submission) return false;
     
     // Editors and admins can review any submission
-    if (user.role === "editor" || user.role === "admin") return true;
+    if (user.role === "Editor" || user.role === "Admin") return true;
     
     // Reviewers can only review if they're assigned
-    if (user.role === "reviewer") {
-      return submission.reviewers?.includes(user.id) || false;
+    if (user.role === "Reviewer") {
+      return submission.reviewers?.includes(user.userId) || false;
     }
     
     return false;

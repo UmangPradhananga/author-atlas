@@ -1,15 +1,15 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Role } from '../types';
 import { authApi } from '../api/apiService';
 import { useToast } from '@/components/ui/use-toast';
+import { CreateAuthorRequest } from '@/types/auth';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  signup: (name: string, email: string, password: string, role: 'reader' | 'author') => Promise<void>;
+  logout: () => Promise<void>;
+  signup: (createAuthorRequest: CreateAuthorRequest) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,8 +23,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = async () => {
       try {
         // Check for existing session
-        const currentUser = await authApi.getCurrentUser();
-        setUser(currentUser);
+        const currentUser = await localStorage.getItem('user');
+        if (currentUser == null ) {return new Error('No user found');}
+        const parsedUser = JSON.parse(currentUser) as User;
+        setUser(parsedUser);
       } catch (error) {
         console.error('Failed to initialize auth:', error);
       } finally {
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(loggedInUser);
       toast({
         title: 'Login successful',
-        description: `Welcome back, ${loggedInUser.name}!`,
+        description: `Welcome back, ${loggedInUser.fullName}!`,
       });
     } catch (error) {
       console.error('Login failed:', error);
@@ -57,15 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (name: string, email: string, password: string, role: 'reader' | 'author') => {
+  const signup = async (createAuthorRequest: CreateAuthorRequest) => {
     setIsLoading(true);
     try {
-      const newUser = await authApi.signup(name, email, password, role);
-      setUser(newUser);
-      toast({
-        title: 'Account created',
-        description: `Welcome to the Journal Manager, ${newUser.name}!`,
-      });
+      const newUser = await authApi.signup(createAuthorRequest);
+      window.location.href = '/login';
     } catch (error) {
       console.error('Signup failed:', error);
       toast({
@@ -79,13 +77,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    // In a real app, would also clear tokens, cookies, etc.
-    toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out.',
-    });
+  const logout = async () => {
+    try {
+      // Call the API to clear server-side session/cookies
+      await authApi.logout();
+      
+      // Clear user data from localStorage
+      localStorage.removeItem('user');
+      
+      // Update state
+      setUser(null);
+      
+      toast({
+        title: 'Logged out',
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: 'Logout Issue',
+        description: 'There was a problem during logout, but you have been logged out of this device.',
+        variant: 'destructive',
+      });
+      
+      // Ensure user is still logged out locally even if API call fails
+      localStorage.removeItem('user');
+      setUser(null);
+    }
   };
 
   return (

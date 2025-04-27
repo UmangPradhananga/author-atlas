@@ -49,6 +49,13 @@ import {
   PaginationPrevious 
 } from "@/components/ui/pagination";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  CreateAuthorRequest,
+  CreateEditorRequest,
+  CreateReviewerRequest,
+  CreatePublisherRequest,
+  CreateCopyEditorRequest,
+} from "@/types/auth";
 
 const UsersPage = () => {
   const { user } = useAuth();
@@ -71,24 +78,45 @@ const UsersPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("reader");
-  const [affiliation, setAffiliation] = useState("");
+  const [role, setRole] = useState<Role>("Reader");
+  const [penName, setPenName] = useState(""); 
+  const [genre, setGenre] = useState("");
+  const [yearsOfService, setYearsOfService] = useState("");
 
   useEffect(() => {
-    if (user && user.role !== "admin") {
+    if (user && user.role !== "Admin") {
       navigate("/");
       return;
     }
 
     const fetchUsers = async () => {
       try {
+        setIsLoading(true);
         const fetchedUsers = await usersApi.getAllUsers();
-        setUsers(fetchedUsers);
+        
+        // Map API response to match our User interface if needed
+        const formattedUsers = fetchedUsers.map(user => ({
+          userId: user.userId,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          // Ensure other optional fields are included if available
+          ...(user.phoneNumber && { phoneNumber: user.phoneNumber }),
+          ...(user.address && { address: user.address }),
+          ...(user.dateOfBirth && { dateOfBirth: user.dateOfBirth }),
+          // Role-specific fields
+          ...(user.penName && { penName: user.penName }),
+          ...(user.genre && { genre: user.genre }),
+          ...(user.yearsOfService && { yearsOfService: user.yearsOfService }),
+          ...(user.associatedPublication && { associatedPublication: user.associatedPublication }),
+        }));
+        
+        setUsers(formattedUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
         toast({
           title: "Error",
-          description: "Failed to load users",
+          description: "Failed to load users. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -111,9 +139,8 @@ const UsersPage = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(user => 
-        user.name.toLowerCase().includes(query) || 
-        user.email.toLowerCase().includes(query) ||
-        (user.affiliation && user.affiliation.toLowerCase().includes(query))
+        user.fullName.toLowerCase().includes(query) || 
+        user.email.toLowerCase().includes(query) 
       );
     }
     
@@ -122,8 +149,8 @@ const UsersPage = () => {
       
       switch (sortField) {
         case "name":
-          fieldA = a.name.toLowerCase();
-          fieldB = b.name.toLowerCase();
+          fieldA = a.fullName.toLowerCase();
+          fieldB = b.fullName.toLowerCase();
           break;
         case "email":
           fieldA = a.email.toLowerCase();
@@ -133,13 +160,9 @@ const UsersPage = () => {
           fieldA = a.role;
           fieldB = b.role;
           break;
-        case "affiliation":
-          fieldA = (a.affiliation || "").toLowerCase();
-          fieldB = (b.affiliation || "").toLowerCase();
-          break;
         default:
-          fieldA = a.name.toLowerCase();
-          fieldB = b.name.toLowerCase();
+          fieldA = a.fullName.toLowerCase();
+          fieldB = b.fullName.toLowerCase();
       }
       
       if (sortDirection === "asc") {
@@ -152,16 +175,110 @@ const UsersPage = () => {
     setFilteredUsers(result);
   }, [users, filteredRole, searchQuery, sortField, sortDirection]);
 
-  const handleCreateUser = async () => {
+  const handleCreateUser = async (role : Role) => {
     try {
-      const newUser = await usersApi.createUser({
-        name,
-        email,
-        password,
-        role,
-        affiliation,
-      });
-      
+      let newUser;
+      let response;
+      if (role === "Author") {
+        const payload: CreateAuthorRequest = {
+          fullName: name,
+          emailAddress: email,
+          password,
+          penName,
+          genere: genre,
+          phoneNumber: "",
+          address: "",
+          categoryId: "",
+          roleName: "Author",
+          confirmPassword: password,
+          dateOfBirth: new Date(),
+        };
+        response = await usersApi.createAuthor(payload);
+        newUser = {
+          id: response.data?.userId || email,
+          name,
+          email,
+          role: "Author",
+        };
+      } else if (role === "Editor") {
+        const payload: CreateEditorRequest = {
+          fullName: name,
+          emailAddress: email,
+          password,
+          yearsOfService: Number(yearsOfService) || 0,
+          researchAreas: "",
+          publications: [],
+          awards: [],
+          reviewedPapersCount: 0,
+          orcid: "",
+          phoneNumber: "",
+          address: "",
+          categoryId: "",
+          roleName: "Editor",
+          confirmPassword: password,
+          dateOfBirth: new Date(),
+        };
+        response = await usersApi.createEditor(payload);
+        newUser = {
+          id: response.data?.userId || email,
+          name,
+          email,
+          role: "Editor",
+        };
+      } else if (role === "Reviewer") {
+        const payload: CreateReviewerRequest = {
+          fullName: name,
+          emailAddress: email,
+          password,
+          affiliation: "",
+          expertise: "",
+          bio: "",
+          dateOfJoining: new Date(),
+          status: "Active",
+          phoneNumber: "",
+          address: "",
+          categoryId: "",
+          roleName: "Reviewer",
+          confirmPassword: password,
+          dateOfBirth: new Date(),
+        };
+        response = await usersApi.createReviewer(payload);
+        newUser = {
+          id: response.data?.userId || email,
+          name,
+          email,
+          role: "Reviewer",
+        };
+      } else if (role === "Publisher") {
+        const payload: CreatePublisherRequest = {
+          fullName: name,
+          emailAddress: email,
+          password,
+          associatedPublication: "",
+          yearsInService: Number(yearsOfService) || 0,
+          phoneNumber: "",
+          address: "",
+          categoryId: "",
+          roleName: "Publisher",
+          confirmPassword: password,
+          dateOfBirth: new Date(),
+        };
+        response = await usersApi.createPublisher(payload);
+        newUser = {
+          id: response.data?.userId || email,
+          name,
+          email,
+          role: "Publisher",
+        };
+      } else {
+        // Default to reader (or fallback)
+        newUser = {
+          id: email,
+          name,
+          email,
+          role: "Reader",
+        };
+      }
       setUsers(prev => [...prev, newUser]);
       toast({
         title: "Success",
@@ -181,17 +298,50 @@ const UsersPage = () => {
 
   const handleUpdateUser = async () => {
     if (!currentUser) return;
-    
     try {
-      const updatedUser = await usersApi.updateUser(currentUser.id, {
-        name,
-        email,
-        role,
-        affiliation,
-        ...(password ? { password } : {}),
-      });
-      
-      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      let updatedUser;
+      let response;
+      if (role === "Author") {
+        response = await usersApi.updateAuthor({
+          fullName: name,
+          emailAddress: email,
+          ...(password ? { password } : {}),
+          penName,
+          genere: genre,
+          roleName: "Author",
+        });
+        updatedUser = { ...currentUser, name, email, role: "author" };
+      } else if (role === "Editor") {
+        response = await usersApi.updateEditor({
+          fullName: name,
+          emailAddress: email,
+          ...(password ? { password } : {}),
+          yearsOfService: Number(yearsOfService) || 0,
+          roleName: "Editor",
+        });
+        updatedUser = { ...currentUser, name, email, role: "editor" };
+      } else if (role === "Reviewer") {
+        response = await usersApi.updateReviewer({
+          fullName: name,
+          emailAddress: email,
+          ...(password ? { password } : {}),
+          // Remove yearsOfService as it's not part of the CreateReviewerRequest type
+          roleName: "Reviewer",
+        });
+        updatedUser = { ...currentUser, name, email, role: "reviewer" };
+          } else if (role === "Publisher") {
+        response = await usersApi.updatePublisher({
+          fullName: name,
+          emailAddress: email,
+          ...(password ? { password } : {}),
+          yearsInService: Number(yearsOfService) || 0,
+          roleName: "Publisher",
+        });
+        updatedUser = { ...currentUser, name, email, role: "publisher" };
+      } else {
+        updatedUser = { ...currentUser, name, email, role: "reader" };
+      }
+      setUsers(prev => prev.map(u => u.userId === currentUser.userId ? updatedUser : u));
       toast({
         title: "Success",
         description: `User ${name} updated successfully`,
@@ -210,8 +360,20 @@ const UsersPage = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      await usersApi.deleteUser(userId);
-      setUsers(prev => prev.filter(u => u.id !== userId));
+      const userToDelete = users.find(u => u.userId === userId);
+      if (!userToDelete) return;
+      if (userToDelete.role === "Author") {
+        await usersApi.deleteAuthor(userId);
+      } else if (userToDelete.role === "Editor") {
+        await usersApi.deleteEditor(userId);
+      } else if (userToDelete.role === "Reviewer") {
+        await usersApi.deleteReviewer(userId);
+      } else if (userToDelete.role === "Publisher") {
+        await usersApi.deletePublisher(userId);
+      } else {
+        // No delete for reader
+      }
+      setUsers(prev => prev.filter(u => u.userId !== userId));
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -228,11 +390,10 @@ const UsersPage = () => {
 
   const openEditDialog = (user: User) => {
     setCurrentUser(user);
-    setName(user.name);
+    setName(user.fullName);
     setEmail(user.email);
     setPassword("");
     setRole(user.role);
-    setAffiliation(user.affiliation || "");
     setEditUserOpen(true);
   };
 
@@ -240,22 +401,21 @@ const UsersPage = () => {
     setName("");
     setEmail("");
     setPassword("");
-    setRole("reader");
-    setAffiliation("");
+    setRole("Reader");
     setCurrentUser(null);
   };
 
   const getRoleBadgeColor = (role: Role) => {
     switch (role) {
-      case "admin":
+      case "Admin":
         return "bg-red-500";
-      case "editor":
+      case "Editor":
         return "bg-blue-500";
-      case "reviewer":
+      case "Reviewer":
         return "bg-amber-500";
-      case "author":
+      case "Author":
         return "bg-green-500";
-      case "reader":
+      case "Reader":
       default:
         return "bg-slate-500";
     }
@@ -336,180 +496,20 @@ const UsersPage = () => {
             Manage all users in the system
           </p>
         </div>
-        <Dialog open={newUserOpen} onOpenChange={setNewUserOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add New User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Enter the details for the new user account
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="password" className="text-right">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                    <SelectItem value="reviewer">Reviewer</SelectItem>
-                    <SelectItem value="author">Author</SelectItem>
-                    <SelectItem value="reader">Reader</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="affiliation" className="text-right">
-                  Affiliation
-                </Label>
-                <Input
-                  id="affiliation"
-                  value={affiliation}
-                  onChange={(e) => setAffiliation(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setNewUserOpen(false)}>
-                Cancel
+        <div className="flex gap-2">
+          <Button onClick={() => navigate("/admin/create-user")}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Create New User
+          </Button>
+          <Dialog open={newUserOpen} onOpenChange={setNewUserOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Quick Add User
               </Button>
-              <Button onClick={handleCreateUser}>
-                Create User
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>
-                Update the user account details
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="edit-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-password" className="text-right">
-                  Password
-                </Label>
-                <Input
-                  id="edit-password"
-                  type="password"
-                  placeholder="Leave blank to keep unchanged"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-role" className="text-right">
-                  Role
-                </Label>
-                <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                    <SelectItem value="reviewer">Reviewer</SelectItem>
-                    <SelectItem value="author">Author</SelectItem>
-                    <SelectItem value="reader">Reader</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-affiliation" className="text-right">
-                  Affiliation
-                </Label>
-                <Input
-                  id="edit-affiliation"
-                  value={affiliation}
-                  onChange={(e) => setAffiliation(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditUserOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateUser}>
-                Update User
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+          </Dialog>
+        </div>
       </div>
 
       <Card>
@@ -599,23 +599,19 @@ const UsersPage = () => {
                 <TableHead onClick={() => handleSort("role")} className="cursor-pointer">
                   Role {sortField === "role" && (sortDirection === "asc" ? "↑" : "↓")}
                 </TableHead>
-                <TableHead onClick={() => handleSort("affiliation")} className="cursor-pointer">
-                  Affiliation {sortField === "affiliation" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {getPaginatedData().map((userItem) => (
-                <TableRow key={userItem.id}>
-                  <TableCell className="font-medium">{userItem.name}</TableCell>
+                <TableRow key={userItem.userId}>
+                  <TableCell className="font-medium">{userItem.fullName}</TableCell>
                   <TableCell>{userItem.email}</TableCell>
                   <TableCell>
                     <Badge className={getRoleBadgeColor(userItem.role)}>
                       {userItem.role}
                     </Badge>
                   </TableCell>
-                  <TableCell>{userItem.affiliation || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -629,7 +625,7 @@ const UsersPage = () => {
                         size="icon"
                         variant="ghost"
                         className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                        onClick={() => handleDeleteUser(userItem.id)}
+                        onClick={() => handleDeleteUser(userItem.userId)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -639,7 +635,7 @@ const UsersPage = () => {
               ))}
               {getPaginatedData().length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>

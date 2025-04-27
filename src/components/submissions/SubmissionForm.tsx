@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState } from "react";                                                                                                        
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useSubmissions } from "@/context/SubmissionContext";
@@ -23,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { PlusCircle, Trash2, Upload, FileText, AlertCircle, Eye, EyeOff, User } from "lucide-react";
+import { PlusCircle, Trash2, Upload, FileText, AlertCircle, Eye, EyeOff, User, Plus, Minus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Tooltip,
@@ -31,6 +30,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CreateJournalRequest } from "@/types/journal";
+
+// Define types for manuscript files
+interface ManuscriptFile {
+  id: string;
+  file: File | null;
+  title: string;
+  type: string; // e.g., "main", "supplementary", "data", "code"
+}
 
 const SubmissionForm = () => {
   const { createSubmission } = useSubmissions();
@@ -48,10 +56,21 @@ const SubmissionForm = () => {
     peerReviewType: "double_blind" as PeerReviewType, // Default to double-blind review
   });
 
-  const [fileInputs, setFileInputs] = useState({
-    manuscript: null as File | null,
-    supplementary: null as File | null,
-  });
+  // New state for handling multiple manuscript files
+  const [manuscriptFiles, setManuscriptFiles] = useState<ManuscriptFile[]>([
+    { 
+      id: "main-manuscript", 
+      file: null, 
+      title: "Main Manuscript", 
+      type: "main" 
+    },
+    { 
+      id: "supplementary-1", 
+      file: null, 
+      title: "Supplementary File 1", 
+      type: "supplementary" 
+    }
+  ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,7 +83,8 @@ const SubmissionForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'manuscript' | 'supplementary') => {
+  // Updated file handling for multiple manuscripts
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileId: string) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
@@ -78,24 +98,26 @@ const SubmissionForm = () => {
         return;
       }
       
-      // For manuscript, check if it's a PDF
-      if (fileType === 'manuscript' && file.type !== 'application/pdf') {
+      // For main manuscript, check if it's a PDF
+      const fileItem = manuscriptFiles.find(f => f.id === fileId);
+      if (fileItem?.type === 'main' && file.type !== 'application/pdf') {
         toast({
           title: "Invalid file type",
-          description: "Manuscript must be a PDF file",
+          description: "Main manuscript must be a PDF file",
           variant: "destructive",
         });
         return;
       }
       
-      setFileInputs({
-        ...fileInputs,
-        [fileType]: file
-      });
+      // Update the file in the manuscriptFiles array
+      setManuscriptFiles(prev => 
+        prev.map(item => 
+          item.id === fileId ? { ...item, file } : item
+        )
+      );
       
-      // In a real app, we would upload the file and get a URL
-      // For demo, we'll just set the filename as the document
-      if (fileType === 'manuscript') {
+      // Set the main document reference if it's the main manuscript
+      if (fileItem?.type === 'main') {
         setFormData({
           ...formData,
           document: file.name // In real app, this would be the file URL after upload
@@ -104,6 +126,38 @@ const SubmissionForm = () => {
     }
   };
 
+  // Add a new manuscript file entry
+  const addManuscriptFile = () => {
+    const newId = `supplementary-${manuscriptFiles.length}`;
+    setManuscriptFiles([
+      ...manuscriptFiles,
+      {
+        id: newId,
+        file: null,
+        title: `Supplementary File ${manuscriptFiles.length}`,
+        type: "supplementary"
+      }
+    ]);
+  };
+
+  // Remove a manuscript file entry
+  const removeManuscriptFile = (fileId: string) => {
+    // Don't allow removing the main manuscript
+    if (fileId === "main-manuscript") return;
+    
+    setManuscriptFiles(prev => prev.filter(item => item.id !== fileId));
+  };
+
+  // Update the title of a manuscript file
+  const updateManuscriptTitle = (fileId: string, newTitle: string) => {
+    setManuscriptFiles(prev => 
+      prev.map(item => 
+        item.id === fileId ? { ...item, title: newTitle } : item
+      )
+    );
+  };
+
+  // Existing functions for handling authors and keywords
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...formData.authors];
     updatedAuthors[index] = value;
@@ -167,10 +221,12 @@ const SubmissionForm = () => {
       return;
     }
     
-    if (!fileInputs.manuscript) {
+    // Check if main manuscript is uploaded
+    const mainManuscript = manuscriptFiles.find(f => f.id === "main-manuscript");
+    if (!mainManuscript?.file) {
       toast({
         title: "Error",
-        description: "Manuscript file is required",
+        description: "Main manuscript file is required",
         variant: "destructive",
       });
       return;
@@ -186,12 +242,22 @@ const SubmissionForm = () => {
       const cleanedAuthors = formData.authors.filter(author => author.trim() !== "");
       const cleanedKeywords = formData.keywords.filter(keyword => keyword.trim() !== "");
       
-      const submission: Partial<Submission> = {
+      // Prepare file information (in a real app, these would be URLs after upload)
+      const files = manuscriptFiles
+        .filter(item => item.file !== null)
+        .map(item => ({
+          filename: item.file!.name,
+          title: item.title,
+          type: item.type,
+          size: item.file!.size
+        }));
+      
+      const submission: Partial<CreateJournalRequest> = {
         ...formData,
-        authors: cleanedAuthors,
-        keywords: cleanedKeywords,
-        // In a real app, document would be the URL of the uploaded file
-        document: fileInputs.manuscript ? fileInputs.manuscript.name : "",
+        AuthorIds: cleanedAuthors,
+        Keywords: cleanedKeywords,
+        Document: mainManuscript?.file?.name || "", // Main document
+        // In a real implementation, we would store the files information in a dedicated field
       };
 
       const newSubmission = await createSubmission(submission);
@@ -201,7 +267,7 @@ const SubmissionForm = () => {
         description: "Your submission has been created as a draft",
       });
       
-      navigate(`/submissions/${newSubmission.id}`);
+      navigate(`/submissions`); // Redirect to the submission details page
     } catch (error) {
       console.error("Error creating submission:", error);
       toast({
@@ -225,90 +291,82 @@ const SubmissionForm = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="manuscript">Manuscript File (PDF)*</Label>
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <div className="flex items-center justify-center w-full">
-                  <label
-                    htmlFor="manuscript"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      {fileInputs.manuscript ? (
-                        <>
-                          <FileText className="w-8 h-8 mb-2 text-primary" />
-                          <p className="text-sm text-primary font-semibold">{fileInputs.manuscript.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(fileInputs.manuscript.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                          <p className="mb-1 text-sm text-muted-foreground">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            PDF (MAX 20MB)
-                          </p>
-                        </>
+            {/* Manuscript files section with add/remove buttons */}
+            <div className="space-y-4">
+              {manuscriptFiles.map((fileItem) => (
+                <div key={fileItem.id} className="space-y-2 border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={fileItem.id} className="font-medium">
+                        {fileItem.type === 'main' ? 'Main Manuscript (PDF)*' : 'Supplementary File'}
+                      </Label>
+                      {fileItem.type !== 'main' && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => removeManuscriptFile(fileItem.id)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
-                    <input 
-                      id="manuscript" 
-                      type="file" 
-                      accept=".pdf" 
-                      className="hidden" 
-                      onChange={(e) => handleFileChange(e, 'manuscript')}
+                    <Input
+                      placeholder="File title"
+                      value={fileItem.title}
+                      onChange={(e) => updateManuscriptTitle(fileItem.id, e.target.value)}
+                      className="max-w-[200px]"
                     />
-                  </label>
-                </div>
-              </div>
-              {!fileInputs.manuscript && (
-                <p className="text-xs text-muted-foreground">
-                  Upload your complete manuscript in PDF format.
-                </p>
-              )}
-            </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="supplementary">Supplementary Files (Optional)</Label>
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <div className="flex items-center justify-center w-full">
-                  <label
-                    htmlFor="supplementary"
-                    className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      {fileInputs.supplementary ? (
-                        <>
-                          <FileText className="w-6 h-6 mb-1 text-primary" />
-                          <p className="text-sm text-primary font-semibold">{fileInputs.supplementary.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(fileInputs.supplementary.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">
-                            Upload supplementary files (MAX 20MB)
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <input 
-                      id="supplementary" 
-                      type="file" 
-                      className="hidden" 
-                      onChange={(e) => handleFileChange(e, 'supplementary')}
-                    />
-                  </label>
+                  <div className="flex items-center justify-center w-full">
+                    <label
+                      htmlFor={fileItem.id}
+                      className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {fileItem.file ? (
+                          <>
+                            <FileText className="w-6 h-6 mb-2 text-primary" />
+                            <p className="text-sm text-primary font-semibold">{fileItem.file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(fileItem.file.size / (1024 * 1024)).toFixed(2)} MB
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 mb-2 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">
+                              {fileItem.type === 'main' 
+                                ? 'Upload main manuscript (PDF only)' 
+                                : 'Upload supplementary file'
+                              }
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      <input 
+                        id={fileItem.id} 
+                        type="file" 
+                        accept={fileItem.type === 'main' ? ".pdf" : undefined}
+                        className="hidden" 
+                        onChange={(e) => handleFileChange(e, fileItem.id)}
+                      />
+                    </label>
+                  </div>
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Include any additional files that support your manuscript.
-              </p>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={addManuscriptFile}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Supplementary File
+              </Button>
             </div>
 
             <Alert className="bg-muted/50 border-muted">

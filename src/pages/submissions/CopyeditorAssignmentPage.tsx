@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSubmissions } from "@/context/SubmissionContext";
@@ -6,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import AssignmentDialog from "@/components/submissions/AssignmentDialog";
 import { useToast } from "@/components/ui/use-toast";
+import { editorApi } from "@/api/apiService";
 
 const CopyeditorAssignmentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getSubmissionById, updateSubmission } = useSubmissions();
+  const { getSubmissionById } = useSubmissions();
   const [isAssigningCopyeditors, setIsAssigningCopyeditors] = useState(true);
   const { toast } = useToast();
   
@@ -20,16 +20,23 @@ const CopyeditorAssignmentPage = () => {
     if (!submission) return;
     
     try {
-      await updateSubmission(submission.id, {
-        copyeditors: userIds
-      });
-      
-      toast({
-        title: "Assignment Updated",
-        description: "Successfully assigned copyeditors to this submission.",
-      });
-      
-      navigate(`/submissions/${submission.id}`);
+      // Use dedicated assignCopyEditor service instead of generic updateSubmission
+      // Note: The API expects a single copyEditorId, so we'll use the first ID in the array
+      if (userIds.length > 0) {
+        const copyEditorId = userIds[0];
+        const publisherId = ""; // You may need to set an appropriate publisher ID
+        
+        // Call the specialized assignCopyEditor service - database will be updated here
+        await editorApi.assignCopyEditor(submission.id, copyEditorId, publisherId);
+        
+        toast({
+          title: "Assignment Updated",
+          description: "Successfully assigned copyeditors to this submission.",
+        });
+        
+        // Navigate back to the submission page - data will be refreshed when the page loads
+        navigate(`/submissions/${submission.id}`);
+      }
     } catch (error) {
       console.error("Error assigning copyeditors:", error);
       toast({

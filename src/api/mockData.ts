@@ -3,67 +3,46 @@ import { User, Submission, Review, DashboardStats } from '../types';
 // Mock Users
 export const users: User[] = [
   {
-    id: 'user-1',
-    name: 'Admin User',
+    userId: 'user-1',
+    fullName: 'Admin User',
     email: 'admin@journal.com',
-    role: 'admin',
-    avatar: 'https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff',
-    affiliation: 'Journal Management System',
-    bio: 'System administrator with full access to journal functions.'
+    role: 'Admin'
   },
   {
-    id: 'user-2',
-    name: 'Editor Smith',
+    userId: 'user-2',
+    fullName: 'Editor Smith',
     email: 'editor@journal.com',
-    role: 'editor',
-    avatar: 'https://ui-avatars.com/api/?name=Editor+Smith&background=2563eb&color=fff',
-    affiliation: 'University of Science',
-    bio: 'Chief Editor with expertise in computer science'
+    role: 'Editor'
   },
   {
-    id: 'user-3',
-    name: 'Reviewer Johnson',
+    userId: 'user-3',
+    fullName: 'Reviewer Johnson',
     email: 'reviewer@journal.com',
-    role: 'reviewer',
-    avatar: 'https://ui-avatars.com/api/?name=Reviewer+Johnson&background=7c3aed&color=fff',
-    affiliation: 'Tech University',
-    bio: 'Expert reviewer in artificial intelligence'
+    role: 'Reviewer'
   },
   {
-    id: 'user-4',
-    name: 'Author Davis',
+    userId: 'user-4',
+    fullName: 'Author Davis',
     email: 'author@journal.com',
-    role: 'author',
-    avatar: 'https://ui-avatars.com/api/?name=Author+Davis&background=10b981&color=fff',
-    affiliation: 'Research Institute',
-    bio: 'Researcher in machine learning and robotics'
+    role: 'Author'
   },
   {
-    id: 'user-5',
-    name: 'Reader Brown',
+    userId: 'user-5',
+    fullName: 'Reader Brown',
     email: 'reader@journal.com',
-    role: 'reader',
-    avatar: 'https://ui-avatars.com/api/?name=Reader+Brown&background=f59e0b&color=fff',
-    affiliation: 'Graduate Student',
-    bio: 'Interested in latest research in technology'
+    role: 'Reader'
   },
   {
-    id: 'user-6',
-    name: 'Copy Editor Jane',
+    userId: 'user-6',
+    fullName: 'Copy Editor Jane',
     email: 'copyeditor@journal.com',
-    role: 'copyeditor',
-    avatar: 'https://ui-avatars.com/api/?name=Copy+Editor+Jane&background=ec4899&color=fff',
-    affiliation: 'Editorial Services Inc.',
-    bio: 'Professional copy editor with expertise in academic publications'
+    role: 'Copyeditor'
   },
   {
-    id: 'user-7',
-    name: 'Publisher John',
+    userId: 'user-7',
+    fullName: 'Publisher John',
     email: 'publisher@journal.com',
-    role: 'publisher',
-    avatar: 'https://ui-avatars.com/api/?name=Publisher+John&background=8b5cf6&color=fff',
-    affiliation: 'Academic Publishing House',
-    bio: 'Publishing professional specializing in scientific journals'
+    role: 'Publisher'
   },
 ];
 
@@ -88,7 +67,7 @@ export const submissions: Submission[] = [
     peerReviewType: 'double_blind',
     reviews: [
       {
-        id: 'rev-1',
+        reviewerIdid: 'rev-1',
         submissionId: 'sub-1',
         reviewerId: 'user-3',
         completed: true,
@@ -159,7 +138,7 @@ export const submissions: Submission[] = [
     coverLetter: 'Our research addresses critical issues in healthcare data security...',
     correspondingAuthor: 'user-4',
     category: 'Healthcare Technology',
-    peerReviewType: 'open',
+
   },
   {
     id: 'sub-4',

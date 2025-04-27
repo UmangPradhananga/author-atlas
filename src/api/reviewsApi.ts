@@ -13,10 +13,9 @@ export const reviewsApi = {
         throw new Error('Submission not found');
       }
       
-      // Create a new review or update existing one
-      const reviewId = reviewData.id || `rev-${Math.random().toString(36).substr(2, 9)}`;
+      // Create a new review or update existing one;
       const review: Review = {
-        id: reviewId,
+        id: reviewData.id || `${submissionId}-${Date.now()}`, // Generate unique ID if not provided
         submissionId,
         reviewerId: reviewData.reviewerId || '',
         completed: true,
@@ -50,12 +49,12 @@ export const reviewsApi = {
       // Get all submissions assigned to this reviewer
       const reviewerSubmissions = await submissionsApi.getReviewerSubmissions(reviewerId);
       
-      // Filter by peer review type if specified
-      if (peerReviewType) {
-        return reviewerSubmissions.filter(submission => 
-          submission.peerReviewType === peerReviewType
-        );
-      }
+      // // Filter by peer review type if specified
+      // if (peerReviewType) {
+      //   return reviewerSubmissions.filter(submission => 
+      //     submission.peerReviewType === peerReviewType
+      //   );
+      // }
       
       return reviewerSubmissions;
     } catch (error) {

@@ -1,6 +1,5 @@
-
 import { useParams, useNavigate } from "react-router-dom";
-import { Review } from "@/types";
+import { Review, ReviewType, ReviewStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import ReviewForm from "@/components/reviews/ReviewForm";
@@ -9,6 +8,7 @@ import AlreadySubmittedReview from "@/components/reviews/AlreadySubmittedReview"
 import { useReviewDetails } from "@/hooks/useReviewDetails";
 import { useSubmissions } from "@/context/SubmissionContext";
 import { useToast } from "@/components/ui/use-toast";
+import { reviewsApi } from "@/api/apiService";
 
 const ReviewDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +26,7 @@ const ReviewDetailsPage = () => {
     user
   } = useReviewDetails(id);
 
-  const isEditor = user?.role === 'editor' || user?.role === 'admin';
+  const isEditor = user?.role === 'Editor' || user?.role === 'Admin';
 
   const onSubmitReview = async (reviewData: Partial<Review>) => {
     try {
@@ -35,29 +35,15 @@ const ReviewDetailsPage = () => {
         reviewData.criteria.overall = 0;
       }
       
-      await handleSubmitReview(reviewData);
+      const submittedReview = await handleSubmitReview(reviewData);
       
-      // If the decision is minor or major revisions, update the submission status
-      if (reviewData.decision === "minor_revisions" || reviewData.decision === "major_revisions") {
+      // If the decision is minor or major revisions and user is a Reviewer, request revision
+      if ((reviewData.decision === "minor_revisions" || reviewData.decision === "major_revisions") && user?.role === "Reviewer") {
         if (submission) {
-          // Prepare decision message based on revision type
-          const decisionMessage = reviewData.decision === "minor_revisions" 
-            ? "The reviewer has suggested minor revisions. Please submit a revised version addressing the comments."
-            : "The reviewer has requested major revisions. Please carefully address all concerns and submit a revised version.";
-          
-          // Update submission with revision_required status
-          await updateSubmission(submission.id, {
-            status: 'revision_required',
-            decision: {
-              status: 'revision',
-              comments: decisionMessage,
-              date: new Date().toISOString()
-            }
-          });
-
+          // Backend will handle the revision process based on the review submission
           toast({
-            title: "Resubmission Portal Activated",
-            description: "The author can now submit a revised version of their manuscript.",
+            title: "Revision Requested",
+            description: `You have requested ${reviewData.decision.replace('_', ' ')} for this submission.`,
           });
         }
       }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -71,7 +70,7 @@ const SubmissionReviewPage = () => {
         // Check if there's an existing review by this reviewer
         if (fetchedSubmission.reviews) {
           const existingReview = fetchedSubmission.reviews.find(
-            r => r.reviewerId === user.id
+            r => r.reviewerId === user.userId
           );
           
           if (existingReview) {
@@ -100,11 +99,11 @@ const SubmissionReviewPage = () => {
     if (!user || !submission) return false;
     
     // Editors and admins can review any submission
-    if (user.role === "editor" || user.role === "admin") return true;
+    if (user.role === "Editor" || user.role === "Admin") return true;
     
     // Reviewers can only review if they're assigned
-    if (user.role === "reviewer") {
-      return submission.reviewers?.includes(user.id) || false;
+    if (user.role === "Reviewer") {
+      return submission.reviewers?.includes(user.userId) || false;
     }
     
     return false;
@@ -147,7 +146,7 @@ const SubmissionReviewPage = () => {
         ...(review || {}),  // Use existing review data if available
         ...formData,
         submissionId: submission.id,
-        reviewerId: user.id,
+        reviewerId: user.userId,
         completed: true,
         submittedDate: new Date().toISOString(),
       };
@@ -168,15 +167,7 @@ const SubmissionReviewPage = () => {
             ? "The reviewer has suggested minor revisions. Please submit a revised version addressing the comments."
             : "The reviewer has requested major revisions. Please carefully address all concerns and submit a revised version.";
           
-          // Update submission with revision_required status
-          await updateSubmission(submission.id, {
-            status: 'revision_required',
-            decision: {
-              status: 'revision',
-              comments: decisionMessage,
-              date: new Date().toISOString()
-            }
-          });
+          
         }
       }
       

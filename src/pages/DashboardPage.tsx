@@ -29,7 +29,7 @@ const DashboardPage = () => {
     { name: 'Chemistry', value: 12 },
     { name: 'Mathematics', value: 8 }
   ];
-
+                   
   const trendComparisonData = [
     { month: 'Jan', submissions: 40, published: 20, rejected: 10 },
     { month: 'Feb', submissions: 35, published: 15, rejected: 12 },
@@ -44,7 +44,7 @@ const DashboardPage = () => {
       if (!user) return;
 
       try {
-        const dashboardStats = await dashboardApi.getStats(user.id);
+        const dashboardStats = await dashboardApi.getStats(user.fullName);
         setStats(dashboardStats);
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
@@ -84,16 +84,17 @@ const DashboardPage = () => {
 
   const renderRoleDashboard = () => {
     switch (user.role) {
-      case "admin":
+      case "Admin":
         return <AdminDashboard stats={stats!} categoryData={categoryData} trendComparisonData={trendComparisonData} />;
-      case "editor":
+      case "Editor":
         return <EditorDashboard stats={stats!} categoryData={categoryData} trendComparisonData={trendComparisonData} />;
-      case "reviewer":
+      case "Reviewer":
         return <ReviewerDashboard stats={stats!} />;
-      case "author":
+      case "Author":
         return <AuthorDashboard stats={stats!} />;
       default:
         return <ReaderDashboard stats={stats!} />;
+        
     }
   };
 
@@ -102,7 +103,7 @@ const DashboardPage = () => {
       <div>
         <h1 className="mb-2">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back, {user.name}. Here's your {user.role} dashboard overview.
+          Welcome back, {user.fullName}. Here's your {user.role} dashboard overview.
         </p>
       </div>
       
@@ -292,7 +293,7 @@ const EditorDashboard = ({ stats, categoryData, trendComparisonData }: Dashboard
           data={stats.submissionTrends}
           title="Submission Trends"
         />
-        <ReviewTimeChart data={stats.reviewTimes} />
+        <ReviewTimeChart data={Array.isArray(stats.reviewTimes) ? stats.reviewTimes : [stats.reviewTimes]} />
         {categoryData && <CategoryDistributionChart data={categoryData} />}
       </div>
 
@@ -334,7 +335,7 @@ const ReviewerDashboard = ({ stats }: DashboardComponentProps) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <ReviewTimeChart data={stats.reviewTimes} />
+        <ReviewTimeChart data={Array.isArray(stats.reviewTimes) ? stats.reviewTimes : [stats.reviewTimes]} />
         <DecisionChart data={stats.decisionRates} />
       </div>
 

@@ -92,7 +92,7 @@ const ReviewerAssignmentDialog = ({
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      reviewer.name.toLowerCase().includes(query) ||
+      reviewer.fullName.toLowerCase().includes(query) ||
       reviewer.email.toLowerCase().includes(query) ||
       reviewer.affiliation?.toLowerCase().includes(query)
     );
@@ -151,27 +151,27 @@ const ReviewerAssignmentDialog = ({
             <ScrollArea className="h-[300px] rounded-md border">
               <div className="p-4 space-y-2">
                 {filteredReviewers.map((reviewer) => {
-                  const isAssigned = isReviewerAlreadyAssigned(reviewer.id);
+                  const isAssigned = isReviewerAlreadyAssigned(reviewer.userId);
                   return (
                     <div
-                      key={reviewer.id}
+                      key={reviewer.userId}
                       className={`flex items-center space-x-2 p-2 rounded ${
-                        selectedReviewerIds.includes(reviewer.id)
+                        selectedReviewerIds.includes(reviewer.userId)
                           ? "bg-accent"
                           : "hover:bg-muted"
                       }`}
                     >
                       <Checkbox
-                        id={`reviewer-${reviewer.id}`}
-                        checked={selectedReviewerIds.includes(reviewer.id)}
-                        onCheckedChange={() => handleSelectReviewer(reviewer.id)}
+                        id={`reviewer-${reviewer.userId}`}
+                        checked={selectedReviewerIds.includes(reviewer.userId)}
+                        onCheckedChange={() => handleSelectReviewer(reviewer.userId)}
                       />
                       <div className="flex-1 grid gap-0.5">
                         <Label
-                          htmlFor={`reviewer-${reviewer.id}`}
+                          htmlFor={`reviewer-${reviewer.userId}`}
                           className="cursor-pointer font-medium flex items-center"
                         >
-                          {reviewer.name}
+                          {reviewer.fullName}
                           {isAssigned && (
                             <span className="ml-2 inline-flex items-center text-xs text-green-600 font-medium">
                               <CheckCircle className="h-3 w-3 mr-1" />
